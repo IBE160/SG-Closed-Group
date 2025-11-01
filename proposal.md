@@ -64,39 +64,46 @@ This API integration delivers measurable value by eliminating manual coordinate 
 - **Runtime**: Node.js 20 LTS
 - **API Design**: RESTful API
 - **Real-time Updates**: Server-Sent Events (SSE) with automatic fallback to short polling (5-second interval) if SSE connection fails
-- **Authentication**: Microsoft Entra ID via OpenID Connect using NextAuth.js v5 (Auth.js)
+- **Authentication**: Google OAuth 2.0 via NextAuth.js v5 (Auth.js) with operator whitelist
 - **Database ORM**: Prisma
 
 ### Database
 - **System**: PostgreSQL 14+
-- **Hosting**: On-premises within Rogaland Brann og Redning network
-- **Indexing Strategy**: 
+- **Hosting**: Cloud-hosted (Vercel Postgres, Supabase, or Neon) for student project phase, migration to on-premises planned post-deployment
+- **Indexing Strategy**:
   - Bonfire notifications: Composite index on (municipality, date, status)
   - Daily information: Index on (date, category)
   - Audit log: Index on (timestamp, table_name)
 
 ### Authentication & Authorization
-- **Protocol**: OAuth 2.0 / OpenID Connect (OIDC)
-- **Provider**: Microsoft Entra ID (Azure AD)
+- **Protocol**: OAuth 2.0
+- **Provider**: Google OAuth for student project phase (migration to Microsoft Entra ID planned for production)
+- **Operator Access**: Whitelist-based (project owner approves Google accounts)
+- **Bonfire Registration**: Authenticated via Google OAuth using special registration link
 - **Session Strategy**: JWT-based sessions (stateless), 8-hour expiration
-- **Token Verification**: Server-side verification using Microsoft public keys
+- **Token Verification**: Server-side verification using Google public keys
 - **Roles**: operator (view and create), administrator (full access including user management)
 
 ### Deployment
-- **Environment**: On-premises Windows Server 2019+
-- **Application Server**: IIS 10+ with iisnode for native Windows integration
-- **Alternative**: HttpPlatformHandler if iisnode proves problematic
-- **Process Management**: IIS Application Pool with automatic restart
-- **SSL/TLS**: Handled by IIS
-- **Internal Access**: Local network only
-- **Public Portal**: www.rogbr.no
+- **Environment**: Cloud hosting (Vercel primary, alternatives: Railway, Render, Fly.io)
+- **Deployment Strategy**: Continuous deployment from Git repository
+- **SSL/TLS**: Automatic HTTPS via hosting platform
+- **Access**: Internet-accessible with Google OAuth authentication
+- **Rationale**: Student project requires deployment without access to on-premises servers during 6-week timeline
+- **Migration Path**: System designed for future migration to on-premises Windows Server + IIS when server access is granted
+- **Trade-offs Accepted**:
+  - Network latency for flash messages (100-500ms vs on-premises)
+  - Google OAuth vs Microsoft Entra ID (migration planned)
+  - Public bonfire registration requires Google login (vs fully public form)
 
 ### External Services
 - **Google Maps API**: Geocoding and interactive maps
-  - API Key Security: HTTP Referer restrictions (www.rogbr.no, internal domain) and IP restrictions for server-side calls
+  - API Key Security: HTTP Referer restrictions and IP restrictions for server-side calls
   - Keys stored in environment variables
   - Usage monitoring to stay within free tier ($200/month credit)
-- **Microsoft Entra ID**: User authentication via OIDC
+- **Google OAuth**: User authentication for operators and bonfire registration
+  - OAuth 2.0 client credentials stored securely in environment variables
+  - Whitelist management via application database
 
 ### Browser Compatibility
 - **Internal System**: Microsoft Edge, Google Chrome (latest 2 versions)
@@ -105,17 +112,17 @@ This API integration delivers measurable value by eliminating manual coordinate 
 ## Core Functionality
 
 ### Must Have (MVP)
-- User authentication with Microsoft Entra ID (@rogbr.no accounts) via OpenID Connect
+- User authentication with Google OAuth (whitelist-based operator access)
 - Role-based access control (operator vs administrator)
 - Daily information board for registering and viewing operational notices (road closures, smoke tests, gas flaring, etc.)
 - Automatic timestamp and author tracking for all entries
 - Weekly duty roster overview showing assigned personnel for key positions
-- Public registration form for bonfire notifications at www.rogbr.no
+- Authenticated bonfire registration form via Google OAuth with special registration link
 - Google Maps integration with Places Autocomplete for address entry
 - Automatic geocoding of addresses to map coordinates
 - Interactive map displaying registered bonfires with markers showing contact details
 - Time-based automatic expiration of bonfire notifications (typically same-day events)
-- Real-time synchronization of new bonfire registrations from public portal to internal map using Server-Sent Events with automatic fallback to polling
+- Real-time synchronization of new bonfire registrations to internal map using Server-Sent Events with automatic fallback to polling
 - Municipality-based filtering of bonfire notifications
 - Search and filter functionality for finding specific bonfire notifications quickly
 - Audit logging for all data modifications
@@ -132,13 +139,14 @@ This API integration delivers measurable value by eliminating manual coordinate 
 
 ### Users
 - `id`: UUID (primary key)
-- `email`: String (unique, from Entra ID)
-- `full_name`: String (from Entra ID)
+- `email`: String (unique, from Google OAuth)
+- `full_name`: String (from Google OAuth)
 - `role`: Enum (operator, administrator)
+- `whitelisted`: Boolean (operator access control)
 - `created_at`: Timestamp
 - `last_login`: Timestamp
 
-**Note**: No password storage - authentication handled entirely by Microsoft Entra ID
+**Note**: No password storage - authentication handled entirely by Google OAuth
 
 ### Daily Information
 - `id`: UUID (primary key)
@@ -214,10 +222,11 @@ This API integration delivers measurable value by eliminating manual coordinate 
 
 ### Week 1: Project Foundation & Setup
 - Project initialization, repository setup, development environment
-- IIS + iisnode proof-of-concept on test server
-- Database schema with Prisma and indexes
-- Microsoft Entra ID authentication integration (OIDC)
-- **Milestone**: Authenticated users can log in with @rogbr.no accounts
+- Vercel deployment setup with continuous deployment
+- Database schema with Prisma and indexes (cloud-hosted PostgreSQL)
+- Google OAuth authentication integration with NextAuth.js
+- Operator whitelist management system
+- **Milestone**: Authenticated users can log in with whitelisted Google accounts
 
 ### Week 2: Daily Information Board & Duty Roster
 - Daily information CRUD operations with audit logging
@@ -232,7 +241,7 @@ This API integration delivers measurable value by eliminating manual coordinate 
 - **Milestone**: Citizens can register bonfires and operators see them on map
 
 ### Week 4: Real-time Updates & Advanced Features
-- Server-Sent Events implementation with IIS configuration
+- Server-Sent Events implementation optimized for Vercel edge functions
 - Automatic fallback to short polling if SSE fails
 - Municipality filtering and advanced search
 - Automatic expiration system and audit logging
@@ -245,10 +254,11 @@ This API integration delivers measurable value by eliminating manual coordinate 
 - **Milestone**: System is stable and ready for deployment
 
 ### Week 6: Deployment & Documentation
-- Production deployment to Windows Server via IIS + iisnode
-- SSL certificate configuration in IIS
+- Production deployment to Vercel with environment variables configured
+- Custom domain configuration (if applicable)
 - Operator training and documentation
-- Final testing in production environment
+- Final testing in production cloud environment
+- Performance benchmarking (latency, load times)
 - **Milestone**: System is live and operators are trained
 
 ### Contingency Planning
@@ -259,27 +269,28 @@ If timeline pressure emerges, prioritize features in this order:
 
 ## Technical Constraints
 - System must operate independently from Locus Emergency Operation system (no API integration possible)
-- Must run on Windows Server environment on Microsoft network
-- Must support 6-10 concurrent users without performance degradation
+- Must support 4-6 concurrent users without performance degradation
 - Real-time updates via Server-Sent Events with automatic fallback to short polling (5s) if SSE connection fails
-- Desktop-only interface for internal system (optimized for 49-inch monitors)
-- Public portal must be responsive and mobile-friendly
-- Interface optimized for half of 49-inch monitor (approximately 1920x1080 viewport)
+- Desktop-only interface for internal system (optimized for 1/4 of 49-inch monitor display)
+- Bonfire registration portal must be responsive and mobile-friendly
+- Interface optimized for quarter-screen 49-inch monitor viewport (~1280x1440 or 2560x720)
 - Must maintain audit trail for compliance
 - Google Maps API with secure key management (HTTP Referer and IP restrictions)
-- Microsoft Entra ID authentication via OpenID Connect
+- Google OAuth authentication with whitelist-based access control
 - GDPR compliance for citizen personal data
 - Data retention: 90 days for bonfires, 1 year for operational data
-- SSL/TLS encryption via IIS
-- IIS configuration for SSE: disable response buffering, set connection timeout to 300 seconds
+- SSL/TLS encryption via cloud hosting platform (automatic HTTPS)
+- Vercel platform constraints: 10-second serverless function timeout, edge function optimization for SSE
 
 ## Security & Compliance
 
 ### Authentication & Authorization
-- Microsoft Entra ID via OpenID Connect (no password storage in application)
+- Google OAuth 2.0 (no password storage in application)
 - JWT-based sessions with 8-hour expiration
-- Server-side token verification using Microsoft public keys
+- Server-side token verification using Google public keys
+- Whitelist-based operator access (database-driven approval)
 - Role-based access control: operator (view/create) vs administrator (full access)
+- Bonfire registration requires Google authentication via special link
 
 ### Data Protection (GDPR)
 - Explicit consent on registration form
@@ -298,57 +309,68 @@ If timeline pressure emerges, prioritize features in this order:
 - SQL injection prevention via Prisma ORM
 - XSS protection with React and Content Security Policy
 - CSRF protection via NextAuth
-- HTTPS/TLS encryption (IIS SSL)
+- HTTPS/TLS encryption (automatic via Vercel)
 - Input validation (client and server-side with Zod)
-- Rate limiting on public form (5 submissions per IP per hour)
+- Rate limiting on bonfire registration (5 submissions per user per hour)
+- Whitelist-based access control for operators
 - Audit logging of all modifications
 
 ## Performance Benchmarks
 
 ### Response Time Targets
-- Initial page load (internal): < 2 seconds
-- Public registration form: < 1.5 seconds
+- Initial page load (internal): < 3 seconds (cloud hosting)
+- Bonfire registration form: < 2 seconds
 - Map rendering (100 markers): < 2 seconds
 - Map rendering (500 markers with clustering): < 3 seconds
-- API response time: < 300ms
-- Real-time notification delivery: < 2 seconds (SSE) or < 7 seconds (polling fallback)
+- API response time: < 500ms (cloud roundtrip)
+- Real-time notification delivery: < 3 seconds (SSE) or < 8 seconds (polling fallback)
+- Flash message delivery: < 1 second between operators (acceptable latency trade-off)
 
 ### Scalability
-- Support 10 concurrent operators
+- Support 4-6 concurrent operators (typical shift size)
 - Handle 100+ daily bonfire registrations
 - Store 10,000+ historical bonfire records
 - Map performance up to 1,000 active markers with clustering
+- Vercel serverless function concurrent execution limits
 
 ### Monitoring
-- IIS logs to Windows Event Log
+- Vercel deployment logs and analytics dashboard
 - Database slow query logging (> 500ms)
 - Google Maps API usage monitoring
 - Application metrics: page load times, API response times, SSE connection stability
+- Error tracking (Vercel integrated or Sentry)
 
 ## Success Criteria
 - Operators can register and view daily information within 30 seconds
 - Duty roster provides clear weekly overview
-- Public can register bonfires via www.rogbr.no with address autocomplete
-- Bonfires appear on map within 3 seconds
+- Citizens can register bonfires via authenticated form with address autocomplete
+- Bonfires appear on map within 3-5 seconds (cloud latency acceptable)
 - Operators verify fires in under 10 seconds (vs. several minutes with email)
 - System reduces bonfire search time by 80%+
-- Only authenticated @rogbr.no users can access internal system
+- Only whitelisted Google account users can access operator system
 - Role-based access enforced (operator vs admin)
-- Page load times meet benchmarks
+- Page load times meet cloud hosting benchmarks
 - Real-time updates work reliably with SSE or polling fallback
+- Flash messages deliver within 1 second between operators
 - Zero security incidents during first 6 months
 - 90%+ operator satisfaction after 1 month
-- 85%+ public form completion rate
+- 85%+ bonfire registration completion rate
 
 ## Post-Launch Roadmap
 
 ### Phase 2 (Months 2-3)
+- Flash message system implementation (NEW FEATURE from brainstorming)
+- Bilstatus management system (S111/S112 tracking)
+- Wall screen application deployment
 - Historical archive with advanced search
 - Email notifications for new registrations
 - Export functionality (CSV/Excel)
 - Statistics dashboard
 
 ### Phase 3 (Months 4-6)
+- Migration to on-premises Windows Server + IIS (when server access granted)
+- Migration from Google OAuth to Microsoft Entra ID
+- Public bonfire registration (remove authentication requirement)
 - Mobile-responsive internal interface
 - SMS notifications for critical information
 - Advanced map features (heat maps, custom styling)
@@ -359,3 +381,4 @@ If timeline pressure emerges, prioritize features in this order:
 - Integration with public alert systems
 - Automated reporting
 - CI/CD automation with GitHub Actions or Azure DevOps
+- Direct integration with Locus system (if API access granted)

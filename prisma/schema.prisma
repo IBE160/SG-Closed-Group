@@ -1,0 +1,138 @@
+// This is your Prisma schema file for 110 Sør-Vest Operations System
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - authenticated via Google OAuth
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  fullName      String    @map("full_name")
+  role          UserRole  @default(OPERATOR)
+  whitelisted   Boolean   @default(false)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  lastLogin     DateTime? @map("last_login")
+
+  // Relations
+  dailyInfoCreated DailyInformation[]
+  dutyRosterUpdates DutyRoster[]
+  auditLogs AuditLog[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  OPERATOR
+  ADMINISTRATOR
+}
+
+// Daily Information Board
+model DailyInformation {
+  id          String      @id @default(uuid())
+  title       String
+  description String      @db.Text
+  category    InfoCategory
+  date        DateTime    @db.Date
+  priority    Priority    @default(NORMAL)
+  createdBy   String      @map("created_by")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  deletedBy   String?     @map("deleted_by")
+  deletedAt   DateTime?   @map("deleted_at")
+
+  // Relations
+  creator User @relation(fields: [createdBy], references: [id])
+
+  @@index([date, category])
+  @@map("daily_information")
+}
+
+enum InfoCategory {
+  ROAD_CLOSURE
+  SMOKE_TEST
+  GAS_FLARING
+  OTHER
+}
+
+enum Priority {
+  CRITICAL // Pri 1 (Red)
+  NORMAL   // Default
+}
+
+// Duty Roster
+model DutyRoster {
+  id             String   @id @default(uuid())
+  positionName   String   @map("position_name")
+  assignedPerson String   @map("assigned_person")
+  weekNumber     Int      @map("week_number")
+  year           Int
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  updatedBy      String   @map("updated_by")
+
+  // Relations
+  updater User @relation(fields: [updatedBy], references: [id])
+
+  @@map("duty_roster")
+}
+
+// Bonfire Notifications
+model BonfireNotification {
+  id          String             @id @default(uuid())
+  name        String
+  phone       String
+  email       String
+  address     String
+  municipality String
+  latitude    Decimal            @db.Decimal(10, 7)
+  longitude   Decimal            @db.Decimal(10, 7)
+  dateFrom    DateTime           @map("date_from")
+  dateTo      DateTime           @map("date_to")
+  description String?            @db.Text
+  createdAt   DateTime           @default(now()) @map("created_at")
+  status      BonfireStatus      @default(ACTIVE)
+  geocodedAt  DateTime?          @map("geocoded_at")
+
+  @@index([municipality, dateFrom, status])
+  @@map("bonfire_notifications")
+}
+
+enum BonfireStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+// Audit Log
+model AuditLog {
+  id          String     @id @default(uuid())
+  actionType  ActionType @map("action_type")
+  tableName   String     @map("table_name")
+  recordId    String     @map("record_id")
+  oldValues   Json?      @map("old_values")
+  newValues   Json?      @map("new_values")
+  userId      String     @map("user_id")
+  userEmail   String     @map("user_email")
+  timestamp   DateTime   @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([timestamp(sort: Desc), tableName])
+  @@map("audit_log")
+}
+
+enum ActionType {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+// Future: Flash Messages (Phase 2)
+// Future: Bilstatus (S111/S112 tracking) (Phase 2)

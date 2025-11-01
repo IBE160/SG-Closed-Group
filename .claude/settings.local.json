@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "Bash(git push:*)",
+      "SlashCommand(/bmad:bmm:workflows:brainstorm-project)",
+      "Bash(mkdir:*)",
+      "Bash(npx create-next-app@latest:*)",
+      "Bash(npm install)",
+      "Bash(npx prisma init)",
+      "Bash(npx prisma generate:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial Next.js 14 project setup with authentication and database\n\nFeatures implemented:\n- Next.js 14.2 with App Router and TypeScript\n- Prisma ORM with PostgreSQL schema\n- Google OAuth authentication via NextAuth.js\n- Tailwind CSS with custom emergency services theme\n- Complete project structure (app/, lib/, components/, prisma/)\n- Environment configuration (.env.example)\n- Database models: User, DailyInformation, DutyRoster, BonfireNotification, AuditLog\n- Whitelist-based access control\n- Role-based authorization (OPERATOR, ADMINISTRATOR)\n- Priority system for messages (CRITICAL, NORMAL)\n\nUpdated documentation:\n- README.md with complete setup instructions\n- proposal.md with cloud deployment strategy\n- Brainstorming session results documented\n\nReady for Week 1 development:\n- Folder/tab navigation structure\n- Basic UI components\n- Google Maps integration preparation\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
