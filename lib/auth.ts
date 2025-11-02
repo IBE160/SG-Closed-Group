@@ -1,8 +1,8 @@
-import { NextAuthOptions } from "next-auth";
+import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 
-export const authOptions: NextAuthOptions = {
+export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -29,11 +29,11 @@ export const authOptions: NextAuthOptions = {
           },
         });
 
-        return "/unauthorized"; // Redirect to unauthorized page
+        return false; // Deny access for non-whitelisted users
       }
 
       if (!dbUser.whitelisted) {
-        return "/unauthorized";
+        return false;
       }
 
       // Update last login
@@ -71,4 +71,4 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 8 * 60 * 60, // 8 hours
   },
-};
+});
