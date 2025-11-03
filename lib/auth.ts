@@ -12,49 +12,76 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async signIn({ user }) {
+      // Skip DB checks during build
+      if (process.env.NEXT_PHASE === "phase-production-build") {
+        return true;
+      }
+
       if (!user.email) return false;
 
-      // Check if user exists and is whitelisted
-      const dbUser = await prisma.user.findUnique({
-        where: { email: user.email },
-      });
-
-      if (!dbUser) {
-        // Create user but not whitelisted by default
-        await prisma.user.create({
-          data: {
-            email: user.email,
-            fullName: user.name || "Unknown User",
-            whitelisted: false,
-          },
+      try {
+        // Check if user exists and is whitelisted
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
         });
 
-        return false; // Deny access for non-whitelisted users
-      }
+        if (!dbUser) {
+          // Create user but not whitelisted by default
+          await prisma.user.create({
+            data: {
+              email: user.email,
+              fullName: user.name || "Unknown User",
+              whitelisted: false,
+            },
+          });
 
-      if (!dbUser.whitelisted) {
+          return false; // Deny access for non-whitelisted users
+        }
+
+        if (!dbUser.whitelisted) {
+          return false;
+        }
+
+        // Update last login
+        await prisma.user.update({
+          where: { email: user.email },
+          data: { lastLogin: new Date() },
+        });
+
+        return true;
+      } catch (error) {
+        console.error("Error in signIn callback:", error);
         return false;
       }
+    },
 
-      // Update last login
-      await prisma.user.update({
-        where: { email: user.email },
-        data: { lastLogin: new Date() },
-      });
-
-      return true;
+    async jwt({ token, user }) {
+      // Store user info in JWT token
+      if (user) {
+        token.email = user.email;
+      }
+      return token;
     },
 
     async session({ session, token }) {
-      if (session.user && token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { email: session.user.email! },
-        });
+      // Skip DB checks during build
+      if (process.env.NEXT_PHASE === "phase-production-build") {
+        return session;
+      }
 
-        if (dbUser) {
-          session.user.id = dbUser.id;
-          session.user.role = dbUser.role;
-          session.user.whitelisted = dbUser.whitelisted;
+      if (session.user && token.email) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { email: token.email as string },
+          });
+
+          if (dbUser) {
+            session.user.id = dbUser.id;
+            session.user.role = dbUser.role;
+            session.user.whitelisted = dbUser.whitelisted;
+          }
+        } catch (error) {
+          console.error("Error in session callback:", error);
         }
       }
 
