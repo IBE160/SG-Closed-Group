@@ -21,9 +21,14 @@ We've replaced the old Forms-based registration with an intelligent **AI chatbot
 - Validates phone numbers in real-time (Norwegian 8-digit format)
 - Verifies addresses using Google Maps Geocoding API
 - Provides better user experience and higher data quality
-- **Powered by Claude 3.5 Haiku** via Vercel AI SDK
+- **Powered by AI** - Choose between:
+  - **Azure OpenAI GPT-4o** (RECOMMENDED for production/student accounts)
+  - **Claude 3.5 Haiku** (Alternative for quick testing)
 
-👉 **[Read the Chatbot Setup Guide](./CHATBOT_SETUP.md)** for detailed instructions!
+📚 **Setup guides:**
+- 👉 **[Azure OpenAI Setup](./AZURE_OPENAI_SETUP.md)** - Step-by-step for student accounts (RECOMMENDED)
+- 👉 **[Anthropic Claude Setup](./CHATBOT_SETUP.md)** - Quick alternative
+- 👉 **[Migration Guide](./MIGRATE_TO_AZURE.md)** - Switch from Claude to Azure
 
 ## Tech Stack
 
@@ -31,7 +36,7 @@ We've replaced the old Forms-based registration with an intelligent **AI chatbot
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Google OAuth via NextAuth.js
-- **AI**: Claude 3.5 Haiku via Vercel AI SDK
+- **AI**: Azure OpenAI GPT-4o or Claude 3.5 Haiku (via Vercel AI SDK)
 - **Styling**: Tailwind CSS with shadcn/ui
 - **Maps**: Google Maps API (Geocoding & Maps JavaScript API)
 - **Deployment**: Vercel
@@ -44,7 +49,9 @@ We've replaced the old Forms-based registration with an intelligent **AI chatbot
 - PostgreSQL database (cloud-hosted: Vercel Postgres, Supabase, or Neon)
 - Google OAuth credentials
 - Google Maps API key (Geocoding API & Maps JavaScript API)
-- Anthropic API key (for AI chatbot - $5 free credit available)
+- **AI Provider** (choose one):
+  - **Azure OpenAI** (RECOMMENDED) - Azure for Students ($100 free credit) → [Setup Guide](./AZURE_OPENAI_SETUP.md)
+  - **Anthropic Claude** - $5 free credit → [Setup Guide](./CHATBOT_SETUP.md)
 
 ### Installation
 
@@ -71,7 +78,9 @@ Edit `.env` with your credentials:
 - `GOOGLE_CLIENT_ID` - From Google Cloud Console
 - `GOOGLE_CLIENT_SECRET` - From Google Cloud Console
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - From Google Cloud Console
-- `ANTHROPIC_API_KEY` - From https://console.anthropic.com (free $5 credit)
+- **AI Provider** (choose one):
+  - `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` - See [Azure Setup](./AZURE_OPENAI_SETUP.md)
+  - `ANTHROPIC_API_KEY` - From https://console.anthropic.com
 
 4. Run Prisma migrations:
 ```bash
@@ -111,7 +120,9 @@ See **[CHATBOT_SETUP.md](./CHATBOT_SETUP.md)** for detailed setup instructions a
 │   └── schema.prisma               # Prisma schema (includes BonfireNotification)
 ├── public/                          # Static assets
 ├── types/                           # TypeScript type definitions
-├── CHATBOT_SETUP.md                # 🆕 AI chatbot setup guide
+├── CHATBOT_SETUP.md                # 🆕 Anthropic Claude setup guide
+├── AZURE_OPENAI_SETUP.md           # 🆕 Azure OpenAI setup guide (RECOMMENDED)
+├── MIGRATE_TO_AZURE.md             # 🆕 Migration guide: Claude → Azure
 └── .env.example                    # 🆕 Environment variables template
 
 ## Development
