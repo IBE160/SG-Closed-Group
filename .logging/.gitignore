@@ -17,6 +17,9 @@ __pycache__/
 log.jsonl
 *.log
 
+# Generated request files (output from processing scripts)
+requests/
+
 # IDE
 .vscode/
 .idea/
