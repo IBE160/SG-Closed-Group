@@ -8,6 +8,7 @@
       "Bash(git pull:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
+      "Bash(git branch:*)",
       "SlashCommand(/bmad:bmm:workflows:solutioning-gate-check)",
       "SlashCommand(/bmad:bmm:workflows:workflow-status)",
       "SlashCommand(/bmad:bmm:workflows:workflow-init)",
