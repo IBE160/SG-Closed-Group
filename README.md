@@ -27,7 +27,7 @@ Built with Next.js 14, TypeScript, Prisma, and Google OAuth.
 
 ### Prerequisites
 
-- Node.js 20 LTS
+- Node.js 22.x or 24.x LTS
 - PostgreSQL database (cloud-hosted: Vercel Postgres, Supabase, or Neon)
 - Google OAuth credentials
 - Google Maps API key

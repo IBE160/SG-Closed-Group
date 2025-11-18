@@ -1,0 +1,308 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>1</storyId>
+    <title>Project Initialization and Repository Setup</title>
+    <status>drafted</status>
+    <generatedAt>2025-11-16</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>docs/stories/1-1-project-initialization-and-repository-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to initialize the Next.js 14 project with TypeScript and core dependencies</iWant>
+    <soThat>I have a working development environment to build features</soThat>
+    <tasks>
+- Task 1: Initialize Next.js 14 project with TypeScript (AC: #1, #2, #6)
+  - Run `npx create-next-app@latest hva-skjer --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"`
+  - Verify project structure created with `src/` directory and App Router
+  - Install additional type definitions: `@types/node`, `@types/react`, `@types/react-dom`
+  - Run `npm run dev` and verify `localhost:3000` loads without errors
+  - Check browser console for any warnings or errors
+
+- Task 2: Configure Git repository (AC: #3)
+  - Initialize Git: `git init`
+  - Verify `.gitignore` includes: `node_modules/`, `.next/`, `.env*`, `*.log`
+  - Add entries for: `out/`, `.DS_Store`, `*.pem`, `.vercel`
+  - Create initial commit with message: "Initial Next.js 14 project setup"
+
+- Task 3: Create environment variable template (AC: #5)
+  - Create `.env.example` file with placeholders
+  - Add entries for: `DATABASE_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_MAPS_API_KEY`, `AZURE_OPENAI_*`
+  - Add comments explaining each variable's purpose
+  - Verify `.env.example` is tracked by Git, but `.env.local` is gitignored
+
+- Task 4: Configure Next.js for production (AC: #7)
+  - Create/update `next.config.mjs` with production settings
+  - Enable strict mode: `reactStrictMode: true`
+  - Configure image optimization domains (if needed)
+  - Add any required experimental features for App Router
+
+- Task 5: Create comprehensive README.md (AC: #4)
+  - Add project title: "Hva Skjer - Emergency Response Application"
+  - Write project overview (2-3 paragraphs from PRD executive summary)
+  - Add prerequisites: Node.js 22.x or 24.x LTS, npm/yarn
+  - Document setup instructions
+  - Add technology stack section
+  - Include link to full documentation in `docs/` folder
+
+- Task 6: Verify and test complete setup (All ACs)
+  - Clean install test: Delete `node_modules`, run `npm install`, verify success
+  - Dev server test: Run `npm run dev`, verify `localhost:3000` accessible
+  - Build test: Run `npm run build`, verify production build succeeds
+  - Type check: Run `npm run type-check` (or `tsc --noEmit`), verify no errors
+  - Lint check: Run `npm run lint`, verify no errors
+  - Review browser console for any warnings or errors
+  - Verify Git status shows clean working directory after initial commit
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. AC-1.1.1: Next.js 14 project initialized with App Router, TypeScript, ESLint, and Prettier configured
+2. AC-1.1.2: Project runs successfully on `localhost:3000` with no errors in browser console
+3. AC-1.1.3: Git repository initialized with proper `.gitignore` for Node.js, Next.js, and environment variables
+4. AC-1.1.4: README.md contains project overview and setup instructions
+5. AC-1.1.5: Environment variable template (`.env.example`) created with placeholder values
+6. AC-1.1.6: All core dependencies installed: `react`, `next`, `typescript`, and type definitions
+7. AC-1.1.7: `next.config.js` configured for production deployment
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Executive Summary</section>
+        <snippet>Emergency response registration and coordination application that restores critical capabilities lost during system upgrades at 110 Sør-Vest. Focuses on flash messaging, event control dashboard, and automated bonfire notifications.</snippet>
+      </doc>
+      <doc>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Project Classification</section>
+        <snippet>Web Application (SaaS B2B) for Emergency Services. 24/7 operations with 3-5 dispatchers per shift. High-stress environment where seconds matter - no tolerance for system downtime.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Project Initialization</section>
+        <snippet>Required initialization: `npx create-next-app@latest hva-skjer --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"`. Establishes Next.js 14 with App Router, TypeScript, Tailwind CSS, ESLint, src/ directory, and @/* import alias.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Technology Stack Details</section>
+        <snippet>Core stack: React 19, Next.js 14 App Router, TypeScript 5.x, Tailwind CSS 3.x, Prisma ORM 6.x, PostgreSQL (Vercel Postgres), NextAuth.js v5, Zustand state management, Server-Sent Events for real-time.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture Document</title>
+        <section>Decision Summary</section>
+        <snippet>Node.js 22.x or 24.x LTS required. Next.js 14.x with App Router. TypeScript for type safety. Vercel deployment with continuous deployment and automatic HTTPS.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Overview</section>
+        <snippet>Establishes complete technical foundation for Hva Skjer. Creates base architecture, development environment, database schema, UI framework, deployment pipeline, real-time infrastructure, and audit logging. Supports 24/7 operations with 4-6 concurrent dispatchers.</snippet>
+      </doc>
+      <doc>
+        <path>docs/stories/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>System Architecture Alignment</section>
+        <snippet>Framework: Next.js 14 App Router with Node.js 22.x/24.x LTS, TypeScript 5.x. Data: PostgreSQL via Vercel Postgres, Prisma ORM 6.x. UI: Tailwind CSS 3.x, shadcn/ui components. Real-time: SSE for one-way broadcasts. Deployment: Vercel with continuous deployment.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.1: Project Initialization and Repository Setup</section>
+        <snippet>Initialize Next.js 14 project with TypeScript and core dependencies. Create working development environment. Use create-next-app with TypeScript and App Router. Configure .gitignore, install core dependencies, configure next.config.js, set up .env.local template.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>dependencies</symbol>
+        <lines>11-26</lines>
+        <reason>Existing project already initialized with Next.js 14.2.15, React 18, TypeScript 5, and core dependencies including NextAuth, Prisma, Google Maps integration, and form handling libraries</reason>
+      </artifact>
+      <artifact>
+        <path>tsconfig.json</path>
+        <kind>config</kind>
+        <symbol>compilerOptions</symbol>
+        <lines>2-22</lines>
+        <reason>TypeScript already configured with strict mode, ESNext modules, path aliases (@/*), and Next.js plugin integration</reason>
+      </artifact>
+      <artifact>
+        <path>next.config.mjs</path>
+        <kind>config</kind>
+        <symbol>nextConfig</symbol>
+        <lines>1-22</lines>
+        <reason>Next.js configured for Vercel deployment with standalone output, image optimization for Google OAuth avatars, and environment variable handling</reason>
+      </artifact>
+      <artifact>
+        <path>.gitignore</path>
+        <kind>config</kind>
+        <symbol>N/A</symbol>
+        <lines>1-41</lines>
+        <reason>Git ignore already properly configured for Node.js, Next.js (.next/, out/), environment files (.env*), Vercel (.vercel), and TypeScript build artifacts</reason>
+      </artifact>
+      <artifact>
+        <path>.env.example</path>
+        <kind>config</kind>
+        <symbol>N/A</symbol>
+        <lines>1-14</lines>
+        <reason>Environment template exists with DATABASE_URL, NextAuth secrets, Google OAuth credentials, and Google Maps API key placeholders</reason>
+      </artifact>
+      <artifact>
+        <path>README.md</path>
+        <kind>documentation</kind>
+        <symbol>N/A</symbol>
+        <lines>1-160</lines>
+        <reason>Comprehensive README with project overview, tech stack, setup instructions, development commands, and git workflow documentation</reason>
+      </artifact>
+      <artifact>
+        <path>app/layout.tsx</path>
+        <kind>component</kind>
+        <symbol>RootLayout</symbol>
+        <lines>1-24</lines>
+        <reason>Next.js 14 root layout with metadata, Inter font, Norwegian language (lang="no"), and global CSS imports</reason>
+      </artifact>
+      <artifact>
+        <path>app/page.tsx</path>
+        <kind>component</kind>
+        <symbol>Home</symbol>
+        <lines>1-19</lines>
+        <reason>Default home page with emergency operations branding - placeholder for future folder navigation implementation</reason>
+      </artifact>
+      <artifact>
+        <path>tailwind.config.ts</path>
+        <kind>config</kind>
+        <symbol>config</symbol>
+        <lines>1-85</lines>
+        <reason>Tailwind CSS configured with dark mode support, shadcn/ui color system (HSL variables), custom animations including flash-blink for emergency messaging, and tailwindcss-animate plugin</reason>
+      </artifact>
+      <artifact>
+        <path>app/globals.css</path>
+        <kind>stylesheet</kind>
+        <symbol>N/A</symbol>
+        <lines>1-64</lines>
+        <reason>Global styles with Tailwind directives, shadcn/ui CSS variables for theming, and custom emergency services utilities (priority-critical, status colors)</reason>
+      </artifact>
+      <artifact>
+        <path>lib/utils.ts</path>
+        <kind>utility</kind>
+        <symbol>cn</symbol>
+        <lines>1-6</lines>
+        <reason>Utility function for merging Tailwind CSS classes using clsx and tailwind-merge - standard shadcn/ui pattern</reason>
+      </artifact>
+      <artifact>
+        <path>prisma/schema.prisma</path>
+        <kind>schema</kind>
+        <symbol>User, DailyInformation</symbol>
+        <lines>1-50</lines>
+        <reason>Database schema already defined with PostgreSQL provider, User model with Google OAuth fields, and core models for emergency operations (partial view)</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package name="next" version="14.2.15" />
+        <package name="react" version="^18.3.1" />
+        <package name="react-dom" version="^18.3.1" />
+        <package name="typescript" version="^5" />
+        <package name="@types/node" version="^20" />
+        <package name="@types/react" version="^18" />
+        <package name="@types/react-dom" version="^18" />
+        <package name="tailwindcss" version="^3.4.1" />
+        <package name="tailwindcss-animate" version="^1.0.7" />
+        <package name="postcss" version="^8" />
+        <package name="autoprefixer" version="^10.0.1" />
+        <package name="eslint" version="^8" />
+        <package name="eslint-config-next" version="14.2.15" />
+        <package name="next-auth" version="^5.0.0-beta.25" />
+        <package name="@prisma/client" version="^5.22.0" />
+        <package name="prisma" version="^5.22.0" />
+        <package name="@vis.gl/react-google-maps" version="^1.3.2" />
+        <package name="react-hook-form" version="^7.53.2" />
+        <package name="@hookform/resolvers" version="^3.9.1" />
+        <package name="zod" version="^3.23.8" />
+        <package name="@tanstack/react-query" version="^5.59.20" />
+        <package name="@radix-ui/react-slot" version="^1.1.0" />
+        <package name="class-variance-authority" version="^0.7.1" />
+        <package name="clsx" version="^2.1.1" />
+        <package name="tailwind-merge" version="^2.5.4" />
+        <package name="lucide-react" version="^0.454.0" />
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="architecture">Next.js 14 with App Router required - no Pages Router. Must use src/ directory structure is NOT used (app/ at root level instead)</constraint>
+    <constraint type="architecture">Import alias @/* maps to project root, not src/* (as configured in tsconfig.json paths)</constraint>
+    <constraint type="runtime">Node.js 22.x or 24.x LTS required per architecture decision</constraint>
+    <constraint type="typescript">Strict mode enabled in tsconfig.json - all code must pass TypeScript strict checks</constraint>
+    <constraint type="styling">Tailwind CSS 3.x utility-first approach - avoid custom CSS unless necessary</constraint>
+    <constraint type="styling">Use shadcn/ui components with HSL color variables defined in globals.css</constraint>
+    <constraint type="deployment">Vercel platform with standalone output mode configured in next.config.mjs</constraint>
+    <constraint type="environment">All sensitive config in environment variables - never hardcode credentials</constraint>
+    <constraint type="testing">Manual verification primary for Story 1.1 - automated tests not required for initialization</constraint>
+    <constraint type="git">Git repository already initialized - verify .gitignore excludes node_modules/, .next/, .env*, build artifacts</constraint>
+    <constraint type="emergency-ux">Norwegian language (lang="no") in HTML - emergency services domain requirement</constraint>
+    <constraint type="emergency-ux">High contrast, professional aesthetic per emergency services design principles</constraint>
+  </constraints>
+  <interfaces>
+    <interface>
+      <name>package.json scripts</name>
+      <kind>CLI commands</kind>
+      <signature>dev, build, start, lint</signature>
+      <path>package.json:5-9</path>
+    </interface>
+    <interface>
+      <name>Tailwind CSS utility classes</name>
+      <kind>CSS utilities</kind>
+      <signature>emergency-container, priority-critical, priority-normal, status-green, status-red, status-grey</signature>
+      <path>app/globals.css:40-64</path>
+    </interface>
+    <interface>
+      <name>shadcn/ui theming system</name>
+      <kind>CSS variables</kind>
+      <signature>HSL color tokens: --background, --foreground, --primary, --secondary, --destructive, --muted, --accent, --border, etc.</signature>
+      <path>app/globals.css:6-27</path>
+    </interface>
+  </interfaces>
+  <tests>
+    <standards>
+Story 1.1 is a project initialization story requiring manual verification rather than automated testing. The primary testing approach is smoke testing and checklist-based verification. Key verification steps include: (1) Development server runs successfully on localhost:3000 without errors, (2) Production build completes without TypeScript or lint errors, (3) All acceptance criteria are met through manual inspection, (4) Browser console shows no warnings or errors during runtime. No automated test frameworks are required for this initialization story - testing will be introduced in later stories when features are implemented.
+    </standards>
+    <locations>
+No automated test directories required for Story 1.1. Future stories will use Vitest for unit/integration tests and Playwright for E2E tests, with test files located alongside implementation files (co-located pattern) or in __tests__ directories per Next.js conventions.
+    </locations>
+    <ideas>
+      <test-idea ac="AC-1.1.1" type="manual">
+        Verify Next.js 14 initialization: Check package.json shows "next": "14.2.15", confirm App Router structure (app/ directory exists), verify TypeScript config (tsconfig.json with strict: true), confirm ESLint config (eslint-config-next installed)
+      </test-idea>
+      <test-idea ac="AC-1.1.2" type="smoke">
+        Run `npm run dev` and verify localhost:3000 loads successfully. Open browser DevTools console and confirm zero errors or warnings during page load. Verify hot module replacement works by editing app/page.tsx and seeing live updates.
+      </test-idea>
+      <test-idea ac="AC-1.1.3" type="manual">
+        Verify Git repository initialization: Run `git status` to confirm repo exists. Check .gitignore includes node_modules/, .next/, .env*, *.log, out/, .DS_Store, *.pem, .vercel. Verify .env files are not tracked but .env.example is.
+      </test-idea>
+      <test-idea ac="AC-1.1.4" type="manual">
+        Review README.md contains: Project title and overview, prerequisites (Node.js version), setup instructions (clone, install, env setup, run dev), technology stack section, link to docs/ folder.
+      </test-idea>
+      <test-idea ac="AC-1.1.5" type="manual">
+        Verify .env.example exists with all required variables: DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_MAPS_API_KEY. Confirm comments explain each variable's purpose.
+      </test-idea>
+      <test-idea ac="AC-1.1.6" type="manual">
+        Check package.json dependencies section includes: react (^18.3.1), react-dom (^18.3.1), next (14.2.15), typescript (^5), @types/node, @types/react, @types/react-dom. Run `npm list` to verify all are installed.
+      </test-idea>
+      <test-idea ac="AC-1.1.7" type="smoke">
+        Verify next.config.mjs exists and contains production-ready settings. Run `npm run build` and confirm production build completes successfully. Check build output for zero TypeScript errors and proper optimization.
+      </test-idea>
+      <test-idea ac="All" type="integration">
+        Complete end-to-end verification: (1) Delete node_modules and package-lock.json, (2) Run npm install, (3) Run npm run dev - verify localhost:3000 accessible, (4) Run npm run build - verify success, (5) Run npm run lint - verify no errors, (6) Check git status - verify clean working directory after commits.
+      </test-idea>
+    </ideas>
+  </tests>
+</story-context>
