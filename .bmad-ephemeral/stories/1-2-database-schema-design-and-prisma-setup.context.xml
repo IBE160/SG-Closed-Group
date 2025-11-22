@@ -1,0 +1,233 @@
+<story-context id=".bmad/bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>1</epicId>
+    <storyId>2</storyId>
+    <title>Database Schema Design and Prisma Setup</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-19</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/1-2-database-schema-design-and-prisma-setup.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>a developer</asA>
+    <iWant>to design the complete database schema and configure Prisma ORM</iWant>
+    <soThat>all features have a consistent data layer</soThat>
+    <tasks>
+- Task 1: Configure Prisma and Database Connection (AC: 1.2.7)
+  - 1.1: Verify Prisma is installed (@prisma/client and prisma dev dependency)
+  - 1.2: Set up DATABASE_URL in .env.example with PostgreSQL connection string format
+  - 1.3: Create .env.local with actual database credentials (Vercel Postgres or local PostgreSQL)
+  - 1.4: Verify prisma/schema.prisma file exists and has correct datasource configuration
+
+- Task 2: Define Complete Database Schema (AC: 1.2.1, 1.2.6)
+  - 2.1: Define User model with id (UUID), email (unique), name, whitelisted (Boolean), role (enum)
+  - 2.2: Define Session model for NextAuth.js with sessionToken (unique), userId (FK), expires
+  - 2.3: Define Event model with id, title, description, priority (enum), status (enum), createdBy, timestamps
+  - 2.4: Define FlashMessage model with id, content, createdBy, createdAt, expiresAt
+  - 2.5: Define VehicleStatus model with id, vehicleId (unique), status (enum), note, updatedBy, updatedAt
+  - 2.6: Define DutyRoster model with id, weekNumber, year, position, assignedTo, unique constraint
+  - 2.7: Define BonfireRegistration model with all fields (name, phone, address, lat/lng, municipality, dates, status, source)
+  - 2.8: Define AuditLog model with userId, userEmail, timestamp, tableName, recordId, actionType, oldValues (Json), newValues (Json)
+  - 2.9: Add all enum types: Role, Priority, EventStatus, VehicleStatusType, BonfireStatus, BonfireSource
+
+- Task 3: Define Relationships and Foreign Keys (AC: 1.2.2)
+  - 3.1: Add User 1:N Session relationship with cascade delete
+  - 3.2: Reference User.id in Event.createdBy (string, not FK for flexibility)
+  - 3.3: Reference User.id in FlashMessage.createdBy
+  - 3.4: Reference User.id in VehicleStatus.updatedBy
+  - 3.5: Reference User.id in DutyRoster.updatedBy (if applicable)
+  - 3.6: Verify all foreign keys have appropriate onDelete behavior (Cascade for sessions)
+
+- Task 4: Add Indexes for Performance (AC: 1.2.3)
+  - 4.1: Add index on User.email (unique already indexed, verify @@index if needed)
+  - 4.2: Add composite index on Event: [priority, createdAt] and [status]
+  - 4.3: Add index on FlashMessage.createdAt
+  - 4.4: Add index on VehicleStatus.vehicleId
+  - 4.5: Add composite index on DutyRoster: [weekNumber, year]
+  - 4.6: Add composite indexes on BonfireRegistration: [municipality, dateFrom], [status, expiresAt], [lat, lng], [address, dateFrom]
+  - 4.7: Add indexes on AuditLog: [timestamp DESC], [tableName], [userId]
+
+- Task 5: Run Database Migrations (AC: 1.2.5)
+  - 5.1: Run `npx prisma migrate dev --name init` to create initial migration
+  - 5.2: Verify migration files are created in prisma/migrations folder
+  - 5.3: Verify migration applied successfully to database
+  - 5.4: Check that all 8 tables exist in database
+  - 5.5: Commit migration files to Git
+
+- Task 6: Generate Prisma Client and Verify Types (AC: 1.2.4)
+  - 6.1: Run `npx prisma generate` to generate Prisma Client
+  - 6.2: Verify TypeScript types available in node_modules/@prisma/client
+  - 6.3: Create or verify lib/prisma.ts singleton pattern for Prisma Client
+  - 6.4: Test Prisma Client connection with simple query (e.g., count users)
+  - 6.5: Verify TypeScript autocomplete works for all models in IDE
+
+- Task 7: Verify Schema with Prisma Studio (AC: 1.2.8)
+  - 7.1: Run `npx prisma studio` to open Prisma Studio UI
+  - 7.2: Verify all 8 tables visible in Studio
+  - 7.3: Verify schema relationships display correctly
+  - 7.4: Test CRUD operations in Studio (optional: create test user)
+  - 7.5: Document Prisma Studio URL for team reference (usually http://localhost:5555)
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+1. AC-1.2.1: All 8 tables are created in PostgreSQL: User, Event, FlashMessage, VehicleStatus, DutyRoster, BonfireRegistration, AuditLog, Session
+2. AC-1.2.2: Relationships between tables are properly defined with foreign keys and cascade deletes where appropriate
+3. AC-1.2.3: Indexes are created for frequently queried fields (dates, status, municipality, email)
+4. AC-1.2.4: Prisma Client is generated and TypeScript types are available in node_modules/@prisma/client
+5. AC-1.2.5: Database migrations are version controlled in prisma/migrations folder
+6. AC-1.2.6: Prisma schema uses UUID primary keys, createdAt/updatedAt timestamps, and proper enum types
+7. AC-1.2.7: Database connection URL is configured via DATABASE_URL environment variable
+8. AC-1.2.8: Prisma Studio can be used to inspect all tables and verify schema correctness
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <artifact>
+        <path>docs/stories/tech-spec-epic-1.md</path>
+        <title>Epic 1 Technical Specification</title>
+        <section>Data Models and Contracts</section>
+        <snippet>Complete Prisma schema for all 8 tables (User, Session, Event, FlashMessage, VehicleStatus, DutyRoster, BonfireRegistration, AuditLog) with UUID primary keys, relationships, indexes, and enums. Lines 98-260 provide the authoritative schema definition.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/architecture.md</path>
+        <title>System Architecture</title>
+        <section>Data Architecture</section>
+        <snippet>Prisma ORM pattern and singleton usage (lines 1575-1751), database connection pooling for serverless, index strategy for performance-critical queries (lines 1760-1768). PostgreSQL via Vercel Postgres free tier (256 MB storage).</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/PRD.md</path>
+        <title>Product Requirements Document</title>
+        <section>Data Requirements</section>
+        <snippet>Data requirements specify all entities and relationships for emergency response system. GDPR compliance requires soft deletes and audit trails for all user-generated data.</snippet>
+      </artifact>
+      <artifact>
+        <path>docs/epics.md</path>
+        <title>Epic Breakdown</title>
+        <section>Story 1.2</section>
+        <snippet>Story definition lines 74-101 - Database Schema Design and Prisma Setup with acceptance criteria for 8 tables, relationships, indexes, and migrations.</snippet>
+      </artifact>
+    </docs>
+    <code>
+      <artifact>
+        <path>prisma/schema.prisma</path>
+        <kind>database schema</kind>
+        <symbol>Current Prisma schema</symbol>
+        <lines>1-139</lines>
+        <reason>Existing schema has partial implementation with User, DailyInformation, DutyRoster, BonfireNotification, and AuditLog models. Needs significant updates to match tech-spec requirements: replace DailyInformation with Event, add Session/FlashMessage/VehicleStatus models, update enums and field names.</reason>
+      </artifact>
+      <artifact>
+        <path>lib/prisma.ts</path>
+        <kind>service</kind>
+        <symbol>Prisma Client singleton</symbol>
+        <lines>all</lines>
+        <reason>Existing Prisma Client singleton implementation - verify it follows Next.js best practices for dev/prod connection handling to avoid connection pool exhaustion in development.</reason>
+      </artifact>
+      <artifact>
+        <path>package.json</path>
+        <kind>config</kind>
+        <symbol>Dependencies</symbol>
+        <lines>16, 39</lines>
+        <reason>Currently has @prisma/client@^5.22.0 and prisma@^5.22.0. Tech-spec requires Prisma 6.x - needs upgrade to latest Prisma 6.x version.</reason>
+      </artifact>
+      <artifact>
+        <path>.env.example</path>
+        <kind>config</kind>
+        <symbol>DATABASE_URL template</symbol>
+        <lines>all</lines>
+        <reason>Environment variable template - verify PostgreSQL connection string format is documented correctly.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <node>
+        <package>@prisma/client</package>
+        <version>^5.22.0</version>
+        <note>NEEDS UPGRADE to ^6.0.0 per tech-spec requirement</note>
+      </node>
+      <node>
+        <package>prisma</package>
+        <version>^5.22.0</version>
+        <note>NEEDS UPGRADE to ^6.0.0 per tech-spec requirement</note>
+      </node>
+      <node>
+        <package>next</package>
+        <version>14.2.15</version>
+      </node>
+      <node>
+        <package>typescript</package>
+        <version>^5</version>
+      </node>
+      <node>
+        <package>next-auth</package>
+        <version>^5.0.0-beta.25</version>
+        <note>Required for Session model integration</note>
+      </node>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+- Use UUID primary keys (non-sequential, better security) - all models use @id @default(uuid())
+- All tables must have createdAt and updatedAt timestamps where applicable
+- Soft deletes with deletedAt timestamps for GDPR compliance (Event, BonfireRegistration models)
+- JSONB fields for audit snapshots (AuditLog.oldValues, AuditLog.newValues)
+- VARCHAR length constraints based on real-world maximums (email = 100 chars, phone = 20 chars, title = 50 chars)
+- Composite indexes for frequently queried combinations (municipality + date + status)
+- Connection pooling configuration (Prisma default, max 10 connections for serverless)
+- PostgreSQL via Vercel Postgres (free tier: 256 MB storage, sufficient for 4-6 users)
+- Project uses app/ directory at root level (NOT inside src/)
+- Import alias @/* maps to project root
+- Prisma schema file location: prisma/schema.prisma
+- Migration files location: prisma/migrations/
+- Prisma Client singleton location: lib/prisma.ts
+- Environment variables: DATABASE_URL in .env.local (not committed), template in .env.example
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>Prisma Client</name>
+      <kind>ORM singleton</kind>
+      <signature>
+import { PrismaClient } from '@prisma/client'
+const prisma = new PrismaClient()
+// Used throughout application for type-safe database queries
+      </signature>
+      <path>lib/prisma.ts</path>
+    </interface>
+    <interface>
+      <name>DATABASE_URL</name>
+      <kind>Environment Variable</kind>
+      <signature>postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public</signature>
+      <path>.env.local</path>
+    </interface>
+    <interface>
+      <name>Prisma Schema Models</name>
+      <kind>Database Models</kind>
+      <signature>
+User, Session, Event, FlashMessage, VehicleStatus, DutyRoster, BonfireRegistration, AuditLog
+Enums: Role, Priority, EventStatus, VehicleStatusType, BonfireStatus, BonfireSource, ActionType
+      </signature>
+      <path>prisma/schema.prisma</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>
+Next.js project with TypeScript - testing standards to be established in later stories. For this story, manual verification via Prisma Studio and TypeScript type checking is sufficient. Future testing will use Jest/Vitest for unit tests and Playwright for E2E tests.
+    </standards>
+    <locations>
+__tests__/ (to be created in future stories)
+app/**/*.test.ts (co-located with components)
+    </locations>
+    <ideas>
+- AC-1.2.1: Verify all 8 tables created - Use Prisma Studio to visually confirm all tables exist
+- AC-1.2.2: Verify relationships - Check Prisma Studio relationship graph, test cascade deletes
+- AC-1.2.3: Verify indexes - Use PostgreSQL \d+ command or Prisma Studio to inspect indexes
+- AC-1.2.4: Verify Prisma Client types - Import PrismaClient and verify TypeScript autocomplete in VS Code
+- AC-1.2.5: Verify migrations - Check prisma/migrations/ folder contains migration files
+- AC-1.2.6: Verify schema structure - Review generated types in node_modules/@prisma/client/index.d.ts
+- AC-1.2.7: Verify DATABASE_URL - Test connection with `npx prisma db pull` or simple query
+- AC-1.2.8: Verify Prisma Studio - Open studio, navigate all tables, test CRUD operations
+    </ideas>
+  </tests>
+</story-context>

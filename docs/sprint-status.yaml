@@ -38,7 +38,7 @@ development_status:
   # Epic 1: Foundation & Infrastructure
   epic-1: contexted
   1-1-project-initialization-and-repository-setup: done
-  1-2-database-schema-design-and-prisma-setup: drafted
+  1-2-database-schema-design-and-prisma-setup: review
   1-3-tailwind-css-and-shadcn-ui-component-library-setup: backlog
   1-4-folder-tab-navigation-structure: backlog
   1-5-hva-skjer-folder-layout-structure: backlog

@@ -1,4 +1,5 @@
-// This is your Prisma schema file for 110 Sør-Vest Operations System
+// Prisma schema file for Hva Skjer - Emergency Response Application
+// Epic 1: Foundation & Infrastructure - Story 1.2
 
 generator client {
   provider = "prisma-client-js"
@@ -9,130 +10,170 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model - authenticated via Google OAuth
-model User {
-  id            String    @id @default(uuid())
-  email         String    @unique
-  fullName      String    @map("full_name")
-  role          UserRole  @default(OPERATOR)
-  whitelisted   Boolean   @default(false)
-  createdAt     DateTime  @default(now()) @map("created_at")
-  lastLogin     DateTime? @map("last_login")
+// ============================================================================
+// ENUMS
+// ============================================================================
 
-  // Relations
-  dailyInfoCreated DailyInformation[]
-  dutyRosterUpdates DutyRoster[]
-  auditLogs AuditLog[]
-
-  @@map("users")
-}
-
-enum UserRole {
+enum Role {
   OPERATOR
   ADMINISTRATOR
 }
 
-// Daily Information Board
-model DailyInformation {
-  id          String      @id @default(uuid())
-  title       String
-  description String      @db.Text
-  category    InfoCategory
-  date        DateTime    @db.Date
-  priority    Priority    @default(NORMAL)
-  createdBy   String      @map("created_by")
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime    @updatedAt @map("updated_at")
-  deletedBy   String?     @map("deleted_by")
-  deletedAt   DateTime?   @map("deleted_at")
-
-  // Relations
-  creator User @relation(fields: [createdBy], references: [id])
-
-  @@index([date, category])
-  @@map("daily_information")
-}
-
-enum InfoCategory {
-  ROAD_CLOSURE
-  SMOKE_TEST
-  GAS_FLARING
-  OTHER
-}
-
 enum Priority {
   CRITICAL // Pri 1 (Red)
-  NORMAL   // Default
+  NORMAL
 }
 
-// Duty Roster
-model DutyRoster {
-  id             String   @id @default(uuid())
-  positionName   String   @map("position_name")
-  assignedPerson String   @map("assigned_person")
-  weekNumber     Int      @map("week_number")
-  year           Int
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-  updatedBy      String   @map("updated_by")
-
-  // Relations
-  updater User @relation(fields: [updatedBy], references: [id])
-
-  @@map("duty_roster")
+enum EventStatus {
+  ACTIVE
+  RESOLVED
+  ARCHIVED
 }
 
-// Bonfire Notifications
-model BonfireNotification {
-  id          String             @id @default(uuid())
-  name        String
-  phone       String
-  email       String
-  address     String
-  municipality String
-  latitude    Decimal            @db.Decimal(10, 7)
-  longitude   Decimal            @db.Decimal(10, 7)
-  dateFrom    DateTime           @map("date_from")
-  dateTo      DateTime           @map("date_to")
-  description String?            @db.Text
-  createdAt   DateTime           @default(now()) @map("created_at")
-  status      BonfireStatus      @default(ACTIVE)
-  geocodedAt  DateTime?          @map("geocoded_at")
-
-  @@index([municipality, dateFrom, status])
-  @@map("bonfire_notifications")
+enum VehicleStatusType {
+  READY // Green - available
+  OUT // Red - just responded
+  OUT_OF_SERVICE // Grey - maintenance/training
 }
 
 enum BonfireStatus {
   ACTIVE
   EXPIRED
-  CANCELLED
+  FLAGGED_FOR_REVIEW
 }
 
-// Audit Log
+enum BonfireSource {
+  MANUAL // Phase 1: Manual entry
+  AI_APPROVED // Phase 2: AI auto-created
+  AI_REVIEWED // Phase 2: AI flagged, human approved
+}
+
+// ============================================================================
+// MODELS
+// ============================================================================
+
+// User Model - Authentication and RBAC
+model User {
+  id          String    @id @default(uuid())
+  email       String    @unique
+  name        String?
+  whitelisted Boolean   @default(false)
+  role        Role      @default(OPERATOR)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  sessions    Session[]
+
+  @@index([email])
+}
+
+// Session Model - NextAuth.js JWT sessions
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expires      DateTime
+  sessionToken String   @unique
+  accessToken  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// Event Model - Operational events (Epic 3)
+model Event {
+  id          String      @id @default(uuid())
+  title       String      @db.VarChar(50)
+  description String      @db.VarChar(200)
+  priority    Priority    @default(NORMAL)
+  status      EventStatus @default(ACTIVE)
+  createdBy   String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  deletedAt   DateTime?
+  deletedBy   String?
+
+  @@index([priority, createdAt])
+  @@index([status])
+}
+
+// FlashMessage Model - Urgent dispatcher communication (Epic 4)
+model FlashMessage {
+  id        String   @id @default(uuid())
+  content   String   @db.VarChar(100)
+  createdBy String
+  createdAt DateTime @default(now())
+  expiresAt DateTime // Auto-archive after 24 hours
+
+  @@index([createdAt])
+}
+
+// VehicleStatus Model - Truck rotation (S111, S112) (Epic 3)
+model VehicleStatus {
+  id        String            @id @default(uuid())
+  vehicleId String            @unique // "S111" or "S112"
+  status    VehicleStatusType @default(OUT)
+  note      String?           @db.VarChar(50) // Grey status reason
+  updatedBy String
+  updatedAt DateTime          @updatedAt
+
+  @@index([vehicleId])
+}
+
+// DutyRoster Model - Weekly personnel assignments (Epic 3)
+model DutyRoster {
+  id         String   @id @default(uuid())
+  weekNumber Int // ISO week number
+  year       Int
+  position   String   @db.VarChar(100) // "vakthavende brannsjef", etc.
+  assignedTo String   @db.VarChar(100) // Person name
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([weekNumber, year, position])
+  @@index([weekNumber, year])
+}
+
+// BonfireRegistration Model - Bonfire notifications (Epic 5)
+model BonfireRegistration {
+  id             String        @id @default(uuid())
+  registrantName String        @db.VarChar(100)
+  phone          String        @db.VarChar(20)
+  address        String        @db.VarChar(200)
+  municipality   String        @db.VarChar(50)
+  lat            Float
+  lng            Float
+  bonfireSize    String        @db.VarChar(50) // "Small", "Medium", "Large"
+  dateFrom       DateTime
+  dateTo         DateTime
+  notes          String?       @db.Text
+  status         BonfireStatus @default(ACTIVE)
+  source         BonfireSource @default(MANUAL)
+  confidence     Float? // AI extraction confidence (0-1)
+  rawEmail       String?       @db.Text // Original email for audit
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  expiresAt      DateTime // Auto-set to dateTo
+  deletedAt      DateTime? // GDPR: soft delete after 90 days
+
+  @@index([municipality, dateFrom])
+  @@index([status, expiresAt])
+  @@index([lat, lng])
+}
+
+// AuditLog Model - Complete action history for compliance
 model AuditLog {
-  id          String     @id @default(uuid())
-  actionType  ActionType @map("action_type")
-  tableName   String     @map("table_name")
-  recordId    String     @map("record_id")
-  oldValues   Json?      @map("old_values")
-  newValues   Json?      @map("new_values")
-  userId      String     @map("user_id")
-  userEmail   String     @map("user_email")
-  timestamp   DateTime   @default(now())
+  id         String   @id @default(uuid())
+  userId     String
+  userEmail  String
+  timestamp  DateTime @default(now())
+  tableName  String   @db.VarChar(50)
+  recordId   String   @db.VarChar(100)
+  actionType String   @db.VarChar(20) // CREATE, UPDATE, DELETE
+  oldValues  Json? // JSONB snapshot
+  newValues  Json? // JSONB snapshot
 
-  // Relations
-  user User @relation(fields: [userId], references: [id])
-
-  @@index([timestamp(sort: Desc), tableName])
-  @@map("audit_log")
+  @@index([timestamp(sort: Desc)])
+  @@index([tableName])
+  @@index([userId])
 }
-
-enum ActionType {
-  CREATE
-  UPDATE
-  DELETE
-}
-
-// Future: Flash Messages (Phase 2)
-// Future: Bilstatus (S111/S112 tracking) (Phase 2)

@@ -19,7 +19,13 @@
       "Bash(npm run build:*)",
       "Bash(cat:*)",
       "Bash(npm run lint:*)",
-      "SlashCommand(/bmad:bmm:workflows:create-story)"
+      "SlashCommand(/bmad:bmm:workflows:create-story)",
+      "SlashCommand(/bmad:bmm:workflows:dev-story)",
+      "Bash(sed:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma format:*)",
+      "Bash(npx prisma generate)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

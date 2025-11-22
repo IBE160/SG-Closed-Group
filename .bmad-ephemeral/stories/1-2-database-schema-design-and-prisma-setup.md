@@ -1,6 +1,6 @@
 # Story 1.2: Database Schema Design and Prisma Setup
 
-Status: drafted
+Status: review
 
 ## Story
 
@@ -21,60 +21,60 @@ So that all features have a consistent data layer.
 
 ## Tasks / Subtasks
 
-- [ ] **Task 1: Configure Prisma and Database Connection** (AC: 1.2.7)
-  - [ ] 1.1: Verify Prisma is installed (`@prisma/client` and `prisma` dev dependency)
-  - [ ] 1.2: Set up DATABASE_URL in .env.example with PostgreSQL connection string format
-  - [ ] 1.3: Create .env.local with actual database credentials (Vercel Postgres or local PostgreSQL)
-  - [ ] 1.4: Verify `prisma/schema.prisma` file exists and has correct datasource configuration
+- [x] **Task 1: Configure Prisma and Database Connection** (AC: 1.2.7)
+  - [x] 1.1: Verify Prisma is installed (`@prisma/client` and `prisma` dev dependency)
+  - [x] 1.2: Set up DATABASE_URL in .env.example with PostgreSQL connection string format
+  - [x] 1.3: Create .env.local with actual database credentials (Vercel Postgres or local PostgreSQL)
+  - [x] 1.4: Verify `prisma/schema.prisma` file exists and has correct datasource configuration
 
-- [ ] **Task 2: Define Complete Database Schema** (AC: 1.2.1, 1.2.6)
-  - [ ] 2.1: Define User model with id (UUID), email (unique), name, whitelisted (Boolean), role (enum)
-  - [ ] 2.2: Define Session model for NextAuth.js with sessionToken (unique), userId (FK), expires
-  - [ ] 2.3: Define Event model with id, title, description, priority (enum), status (enum), createdBy, timestamps
-  - [ ] 2.4: Define FlashMessage model with id, content, createdBy, createdAt, expiresAt
-  - [ ] 2.5: Define VehicleStatus model with id, vehicleId (unique), status (enum), note, updatedBy, updatedAt
-  - [ ] 2.6: Define DutyRoster model with id, weekNumber, year, position, assignedTo, unique constraint
-  - [ ] 2.7: Define BonfireRegistration model with all fields (name, phone, address, lat/lng, municipality, dates, status, source)
-  - [ ] 2.8: Define AuditLog model with userId, userEmail, timestamp, tableName, recordId, actionType, oldValues (Json), newValues (Json)
-  - [ ] 2.9: Add all enum types: Role, Priority, EventStatus, VehicleStatusType, BonfireStatus, BonfireSource
+- [x] **Task 2: Define Complete Database Schema** (AC: 1.2.1, 1.2.6)
+  - [x] 2.1: Define User model with id (UUID), email (unique), name, whitelisted (Boolean), role (enum)
+  - [x] 2.2: Define Session model for NextAuth.js with sessionToken (unique), userId (FK), expires
+  - [x] 2.3: Define Event model with id, title, description, priority (enum), status (enum), createdBy, timestamps
+  - [x] 2.4: Define FlashMessage model with id, content, createdBy, createdAt, expiresAt
+  - [x] 2.5: Define VehicleStatus model with id, vehicleId (unique), status (enum), note, updatedBy, updatedAt
+  - [x] 2.6: Define DutyRoster model with id, weekNumber, year, position, assignedTo, unique constraint
+  - [x] 2.7: Define BonfireRegistration model with all fields (name, phone, address, lat/lng, municipality, dates, status, source)
+  - [x] 2.8: Define AuditLog model with userId, userEmail, timestamp, tableName, recordId, actionType, oldValues (Json), newValues (Json)
+  - [x] 2.9: Add all enum types: Role, Priority, EventStatus, VehicleStatusType, BonfireStatus, BonfireSource
 
-- [ ] **Task 3: Define Relationships and Foreign Keys** (AC: 1.2.2)
-  - [ ] 3.1: Add User 1:N Session relationship with cascade delete
-  - [ ] 3.2: Reference User.id in Event.createdBy (string, not FK for flexibility)
-  - [ ] 3.3: Reference User.id in FlashMessage.createdBy
-  - [ ] 3.4: Reference User.id in VehicleStatus.updatedBy
-  - [ ] 3.5: Reference User.id in DutyRoster.updatedBy (if applicable)
-  - [ ] 3.6: Verify all foreign keys have appropriate onDelete behavior (Cascade for sessions)
+- [x] **Task 3: Define Relationships and Foreign Keys** (AC: 1.2.2)
+  - [x] 3.1: Add User 1:N Session relationship with cascade delete
+  - [x] 3.2: Reference User.id in Event.createdBy (string, not FK for flexibility)
+  - [x] 3.3: Reference User.id in FlashMessage.createdBy
+  - [x] 3.4: Reference User.id in VehicleStatus.updatedBy
+  - [x] 3.5: Reference User.id in DutyRoster.updatedBy (if applicable)
+  - [x] 3.6: Verify all foreign keys have appropriate onDelete behavior (Cascade for sessions)
 
-- [ ] **Task 4: Add Indexes for Performance** (AC: 1.2.3)
-  - [ ] 4.1: Add index on User.email (unique already indexed, verify @@index if needed)
-  - [ ] 4.2: Add composite index on Event: [priority, createdAt] and [status]
-  - [ ] 4.3: Add index on FlashMessage.createdAt
-  - [ ] 4.4: Add index on VehicleStatus.vehicleId
-  - [ ] 4.5: Add composite index on DutyRoster: [weekNumber, year]
-  - [ ] 4.6: Add composite indexes on BonfireRegistration: [municipality, dateFrom], [status, expiresAt], [lat, lng], [address, dateFrom]
-  - [ ] 4.7: Add indexes on AuditLog: [timestamp DESC], [tableName], [userId]
+- [x] **Task 4: Add Indexes for Performance** (AC: 1.2.3)
+  - [x] 4.1: Add index on User.email (unique already indexed, verify @@index if needed)
+  - [x] 4.2: Add composite index on Event: [priority, createdAt] and [status]
+  - [x] 4.3: Add index on FlashMessage.createdAt
+  - [x] 4.4: Add index on VehicleStatus.vehicleId
+  - [x] 4.5: Add composite index on DutyRoster: [weekNumber, year]
+  - [x] 4.6: Add composite indexes on BonfireRegistration: [municipality, dateFrom], [status, expiresAt], [lat, lng], [address, dateFrom]
+  - [x] 4.7: Add indexes on AuditLog: [timestamp DESC], [tableName], [userId]
 
-- [ ] **Task 5: Run Database Migrations** (AC: 1.2.5)
-  - [ ] 5.1: Run `npx prisma migrate dev --name init` to create initial migration
-  - [ ] 5.2: Verify migration files are created in prisma/migrations folder
-  - [ ] 5.3: Verify migration applied successfully to database
-  - [ ] 5.4: Check that all 8 tables exist in database
-  - [ ] 5.5: Commit migration files to Git
+- [x] **Task 5: Run Database Migrations** (AC: 1.2.5)
+  - [x] 5.1: Run `npx prisma migrate dev --name init` to create initial migration
+  - [x] 5.2: Verify migration files are created in prisma/migrations folder
+  - [x] 5.3: Verify migration applied successfully to database
+  - [x] 5.4: Check that all 8 tables exist in database
+  - [x] 5.5: Commit migration files to Git
 
-- [ ] **Task 6: Generate Prisma Client and Verify Types** (AC: 1.2.4)
-  - [ ] 6.1: Run `npx prisma generate` to generate Prisma Client
-  - [ ] 6.2: Verify TypeScript types available in node_modules/@prisma/client
-  - [ ] 6.3: Create or verify lib/prisma.ts singleton pattern for Prisma Client
-  - [ ] 6.4: Test Prisma Client connection with simple query (e.g., count users)
-  - [ ] 6.5: Verify TypeScript autocomplete works for all models in IDE
+- [x] **Task 6: Generate Prisma Client and Verify Types** (AC: 1.2.4)
+  - [x] 6.1: Run `npx prisma generate` to generate Prisma Client
+  - [x] 6.2: Verify TypeScript types available in node_modules/@prisma/client
+  - [x] 6.3: Create or verify lib/prisma.ts singleton pattern for Prisma Client
+  - [x] 6.4: Test Prisma Client connection with simple query (e.g., count users)
+  - [x] 6.5: Verify TypeScript autocomplete works for all models in IDE
 
-- [ ] **Task 7: Verify Schema with Prisma Studio** (AC: 1.2.8)
-  - [ ] 7.1: Run `npx prisma studio` to open Prisma Studio UI
-  - [ ] 7.2: Verify all 8 tables visible in Studio
-  - [ ] 7.3: Verify schema relationships display correctly
-  - [ ] 7.4: Test CRUD operations in Studio (optional: create test user)
-  - [ ] 7.5: Document Prisma Studio URL for team reference (usually http://localhost:5555)
+- [x] **Task 7: Verify Schema with Prisma Studio** (AC: 1.2.8)
+  - [x] 7.1: Run `npx prisma studio` to open Prisma Studio UI
+  - [x] 7.2: Verify all 8 tables visible in Studio
+  - [x] 7.3: Verify schema relationships display correctly
+  - [x] 7.4: Test CRUD operations in Studio (optional: create test user)
+  - [x] 7.5: Document Prisma Studio URL for team reference (usually http://localhost:5555)
 
 ## Dev Notes
 
