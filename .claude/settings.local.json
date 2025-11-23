@@ -1,7 +1,31 @@
 {
   "permissions": {
     "allow": [
-      "Bash(git branch:*)"
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git push:*)",
+      "Bash(mkdir:*)",
+      "Bash(git pull:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git branch:*)",
+      "SlashCommand(/bmad:bmm:workflows:solutioning-gate-check)",
+      "SlashCommand(/bmad:bmm:workflows:workflow-status)",
+      "SlashCommand(/bmad:bmm:workflows:workflow-init)",
+      "Bash(git commit:*)",
+      "SlashCommand(/bmad:bmm:workflows:epic-tech-context)",
+      "Bash(test:*)",
+      "Bash(node --version:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(npm run lint:*)",
+      "SlashCommand(/bmad:bmm:workflows:create-story)",
+      "SlashCommand(/bmad:bmm:workflows:dev-story)",
+      "Bash(sed:*)",
+      "Bash(npm install:*)",
+      "Bash(npx prisma format:*)",
+      "Bash(npx prisma generate)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // React strict mode for better development warnings
+  reactStrictMode: true,
+
   // Optimized for Vercel deployment
   output: 'standalone',
 
