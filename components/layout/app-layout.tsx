@@ -1,5 +1,6 @@
 "use client";
 
+import { FlashBar } from "./flash-bar";
 import { TabNavigation } from "./tab-navigation";
 
 interface AppLayoutProps {
@@ -9,7 +10,10 @@ interface AppLayoutProps {
 export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      {/* Tab Navigation at top - Excel-style */}
+      {/* Flash message bar - always visible at very top */}
+      <FlashBar />
+
+      {/* Tab Navigation below flash bar - Excel-style */}
       <TabNavigation />
 
       {/* Main content area */}

@@ -7,16 +7,15 @@ import { cn } from "@/lib/utils";
 
 const tabs = [
   { name: "Hva Skjer", href: "/hva-skjer", shortcut: "1" },
-  { name: "Flash", href: "/flash", shortcut: "2" },
-  { name: "Bålmelding", href: "/balmelding", shortcut: "3" },
-  { name: "Innstillinger", href: "/innstillinger", shortcut: "4" },
+  { name: "Bålmelding", href: "/balmelding", shortcut: "2" },
+  { name: "Innstillinger", href: "/innstillinger", shortcut: "3" },
 ] as const;
 
 export function TabNavigation() {
   const pathname = usePathname();
   const router = useRouter();
 
-  // Keyboard shortcuts: Ctrl+1, Ctrl+2, Ctrl+3, Ctrl+4
+  // Keyboard shortcuts: Ctrl+1, Ctrl+2, Ctrl+3
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.ctrlKey && !e.altKey && !e.shiftKey && !e.metaKey) {
