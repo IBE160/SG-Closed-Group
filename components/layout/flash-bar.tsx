@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { X, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -14,24 +14,10 @@ interface FlashMessage {
 export function FlashBar() {
   const [currentMessage, setCurrentMessage] = useState<FlashMessage | null>(null);
   const [inputValue, setInputValue] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Demo: Show a sample message (will be replaced with real data later)
-  useEffect(() => {
-    // Simulated flash message - remove this when connecting to real data
-    const demoMessage: FlashMessage = {
-      id: "demo-1",
-      text: "Velkommen til 110 Sør-Vest operasjonssystem",
-      timestamp: new Date(),
-      sender: "System",
-    };
-    setCurrentMessage(demoMessage);
-  }, []);
 
   const handleClearMessage = () => {
     setCurrentMessage(null);
-    setIsEditing(true);
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
@@ -45,7 +31,6 @@ export function FlashBar() {
       };
       setCurrentMessage(newMessage);
       setInputValue("");
-      setIsEditing(false);
       // TODO: Send to database/broadcast to other operators
     }
   };
@@ -55,41 +40,33 @@ export function FlashBar() {
       e.preventDefault();
       handleSendMessage();
     }
-    if (e.key === "Escape") {
-      setIsEditing(false);
-      setInputValue("");
-    }
   };
 
   const handleBarClick = () => {
     if (!currentMessage) {
-      setIsEditing(true);
-      setTimeout(() => inputRef.current?.focus(), 0);
+      inputRef.current?.focus();
     }
   };
 
   return (
     <div
       className={cn(
-        "flex h-10 w-full items-center border-b border-border bg-card/50 px-4",
-        "transition-colors",
-        currentMessage ? "bg-info/10" : "hover:bg-card/80 cursor-text"
+        "flex h-12 w-full items-center px-4",
+        "border-2 border-destructive",
+        "bg-destructive/10",
+        "transition-all",
+        !currentMessage && "cursor-text"
       )}
       onClick={handleBarClick}
     >
-      {/* Flash label */}
-      <span className="mr-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Flash
-      </span>
-
       {/* Message display or input */}
       <div className="flex flex-1 items-center">
-        {currentMessage && !isEditing ? (
+        {currentMessage ? (
           <>
-            <span className="flex-1 truncate text-sm text-foreground">
+            <span className="flex-1 truncate text-base font-semibold text-foreground">
               {currentMessage.text}
             </span>
-            <span className="ml-2 text-xs text-muted-foreground">
+            <span className="ml-3 text-xs text-muted-foreground whitespace-nowrap">
               {currentMessage.sender} •{" "}
               {currentMessage.timestamp.toLocaleTimeString("no-NO", {
                 hour: "2-digit",
@@ -101,41 +78,40 @@ export function FlashBar() {
                 e.stopPropagation();
                 handleClearMessage();
               }}
-              className="ml-3 rounded p-1 text-muted-foreground hover:bg-destructive/20 hover:text-destructive transition-colors"
-              title="Fjern melding (Esc)"
+              className="ml-3 rounded p-1.5 text-destructive hover:bg-destructive/30 transition-colors"
+              title="Fjern melding og skriv ny"
               aria-label="Fjern flash-melding"
             >
-              <X className="h-4 w-4" />
+              <X className="h-5 w-5" />
             </button>
           </>
         ) : (
-          <>
+          <div className="flex flex-1 items-center relative">
             <input
               ref={inputRef}
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyDown={handleKeyDown}
-              onBlur={() => {
-                if (!inputValue.trim()) {
-                  setIsEditing(false);
-                }
-              }}
-              placeholder="Skriv flash-melding til alle operatører..."
-              className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
-              autoFocus={isEditing}
+              className="flex-1 bg-transparent text-base font-semibold text-foreground focus:outline-none"
             />
+            {/* Placeholder that disappears when typing */}
+            {!inputValue && (
+              <span className="absolute left-0 text-base font-medium text-muted-foreground/50 pointer-events-none select-none uppercase tracking-widest">
+                FLASH
+              </span>
+            )}
             {inputValue.trim() && (
               <button
                 onClick={handleSendMessage}
-                className="ml-2 rounded p-1 text-info hover:bg-info/20 transition-colors"
+                className="ml-2 rounded p-1.5 text-destructive hover:bg-destructive/30 transition-colors"
                 title="Send melding (Enter)"
                 aria-label="Send flash-melding"
               >
-                <Send className="h-4 w-4" />
+                <Send className="h-5 w-5" />
               </button>
             )}
-          </>
+          </div>
         )}
       </div>
     </div>
