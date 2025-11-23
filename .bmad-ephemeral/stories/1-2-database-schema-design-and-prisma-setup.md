@@ -1,6 +1,6 @@
 # Story 1.2: Database Schema Design and Prisma Setup
 
-Status: review
+Status: done
 
 ## Story
 
@@ -185,5 +185,8 @@ So that all features have a consistent data layer.
 ### Debug Log References
 
 ### Completion Notes List
+
+**Completed:** 2025-11-22
+**Definition of Done:** All acceptance criteria met, code reviewed, tests passing
 
 ### File List

@@ -137,11 +137,46 @@ git push origin dev-application
 
 ## Deployment
 
-The application is configured for deployment on Vercel:
+The application is deployed on **Vercel** with automatic deployments.
 
-1. Connect your GitHub repository to Vercel
-2. Configure environment variables in Vercel dashboard
-3. Deploy automatically on push to `main` branch
+### Quick Deploy to Vercel
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/IBE160/SG-Closed-Group)
+
+### Manual Deployment Setup
+
+1. **Connect Repository to Vercel:**
+   - Go to [vercel.com](https://vercel.com) and sign in with GitHub
+   - Click "New Project" → Import your repository
+   - Framework Preset: Next.js (auto-detected)
+   - Build Command: `npm run build`
+   - Output Directory: `.next`
+
+2. **Configure Environment Variables** (in Vercel Dashboard → Settings → Environment Variables):
+
+   | Variable | Description | Scope |
+   |----------|-------------|-------|
+   | `DATABASE_URL` | PostgreSQL connection string | Production, Preview |
+   | `NEXTAUTH_URL` | Production URL (e.g., https://sg-closed-group.vercel.app) | Production |
+   | `NEXTAUTH_SECRET` | Generate: `openssl rand -base64 32` | Production, Preview |
+   | `GOOGLE_CLIENT_ID` | Google OAuth Client ID | Production, Preview |
+   | `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | Production, Preview |
+   | `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` | Google Maps API Key | Production, Preview |
+
+3. **Database Setup (Vercel Postgres):**
+   - In Vercel Dashboard → Storage → Create Database → Postgres
+   - Copy the `POSTGRES_PRISMA_URL` to `DATABASE_URL`
+   - Run migration: `npx prisma migrate deploy`
+
+4. **Deploy:**
+   - Push to `main` branch for production deployment
+   - Push to any other branch for preview deployment
+
+### Deployment URLs
+
+- **Production:** Deployed on merge to `main`
+- **Preview:** Deployed on push to feature branches
+- **Custom Domain:** Configure in Vercel Dashboard → Settings → Domains
 
 ## Documentation
 

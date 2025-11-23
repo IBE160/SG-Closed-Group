@@ -38,11 +38,11 @@ development_status:
   # Epic 1: Foundation & Infrastructure
   epic-1: contexted
   1-1-project-initialization-and-repository-setup: done
-  1-2-database-schema-design-and-prisma-setup: review
-  1-3-tailwind-css-and-shadcn-ui-component-library-setup: backlog
-  1-4-folder-tab-navigation-structure: backlog
-  1-5-hva-skjer-folder-layout-structure: backlog
-  1-6-vercel-deployment-pipeline-configuration: backlog
+  1-2-database-schema-design-and-prisma-setup: done
+  1-3-tailwind-css-and-shadcn-ui-component-library-setup: done
+  1-4-folder-tab-navigation-structure: done
+  1-5-hva-skjer-folder-layout-structure: done
+  1-6-vercel-deployment-pipeline-configuration: in-progress
   1-7-real-time-infrastructure-foundation-sse-websocket-setup: backlog
   1-8-audit-logging-infrastructure: backlog
   epic-1-retrospective: optional
