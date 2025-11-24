@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(git branch:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(npx prisma db push)",
+      "Bash(npx dotenv:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(set \"DATABASE_URL=postgres://postgres.ydpkvgxausahjkdfoooo:4VrFMLmwgVdSHxNy@aws-1-eu-north-1.pooler.supabase.com:6543/postgres?sslmode=require\")",
+      "Bash(npx prisma:*)",
+      "Bash(unset DATABASE_URL:*)",
+      "SlashCommand(/bmad:bmm:workflows:retrospective)",
+      "Bash(npm view:*)",
+      "SlashCommand(/bmad:bmm:workflows:epic-tech-context)"
     ],
     "deny": [],
     "ask": []
