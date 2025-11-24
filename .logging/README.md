@@ -1,12 +1,12 @@
-# Gemini CLI Telemetry Processing Scripts
+# AI Assistant Telemetry Processing Scripts
 
-This directory contains scripts for processing and analyzing Gemini CLI telemetry logs.
+This directory contains scripts for processing and analyzing AI assistant logs (both Gemini CLI and Claude Code).
 
 ## Scripts
 
 ### `process-api-requests.py`
 
-Extracts API request, response, and error events from the telemetry log file and outputs them as structured JSON grouped by `prompt_id`.
+Extracts API request, response, and error events from the Gemini CLI telemetry log file and outputs them as structured JSON grouped by `prompt_id`.
 
 **Features:**
 - ✅ File locking to prevent concurrent access
@@ -15,6 +15,32 @@ Extracts API request, response, and error events from the telemetry log file and
 - ✅ Progress feedback during processing
 - ✅ Automatic log file clearing after successful processing
 - ✅ Handles incomplete JSON gracefully
+
+### `process-claude-logs.py` ⭐ NEW
+
+Converts Claude Code JSONL logs to Gemini-compatible format for unified viewing. This allows you to analyze all your AI assistant interactions in one place.
+
+**Features:**
+- ✅ Automatically finds Claude Code logs in `~/.claude/projects/`
+- ✅ Converts to Gemini-compatible JSON format
+- ✅ Preserves prompts, responses, and thinking blocks
+- ✅ Works with the existing api-viewer.html
+- ✅ Perfect for reflection assignments and analysis
+
+**Usage:**
+```bash
+# Process recent sessions (default: 10 most recent)
+python .logging/process-claude-logs.py
+
+# Process all sessions
+python .logging/process-claude-logs.py --all
+
+# Process specific number of sessions
+python .logging/process-claude-logs.py --limit 5
+
+# Custom output directory
+python .logging/process-claude-logs.py --output-dir ./my-logs
+```
 
 ### `watcher.py`
 
@@ -38,7 +64,29 @@ The logging directory is organized as follows:
 
 ## Quick Start
 
-### 1. Process Telemetry Logs
+### For Claude Code Logs (Recommended for Reflection Assignments)
+
+**Step 1: Process Claude Code logs**
+
+```bash
+# Process all your Claude sessions
+python .logging/process-claude-logs.py --all
+
+# Or just the most recent ones
+python .logging/process-claude-logs.py --limit 10
+```
+
+**Step 2: View in Browser**
+
+```bash
+python .logging/server.py
+```
+
+Your browser will open automatically showing all your Claude interactions!
+
+### For Gemini CLI Logs
+
+**Step 1: Process Gemini Telemetry Logs**
 
 No setup required! Just run:
 
@@ -48,7 +96,7 @@ uv run .logging/process-api-requests.py
 
 The `uv` tool automatically handles dependencies defined in the script header. Output files are saved to `.logging/requests/`.
 
-### 2. View Results in Browser
+**Step 2: View Results in Browser**
 
 Start the viewer server:
 

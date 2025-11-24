@@ -30,7 +30,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           await prisma.user.create({
             data: {
               email: user.email,
-              fullName: user.name || "Unknown User",
+              name: user.name || "Unknown User",
               whitelisted: false,
             },
           });
@@ -42,11 +42,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return false;
         }
 
-        // Update last login
-        await prisma.user.update({
-          where: { email: user.email },
-          data: { lastLogin: new Date() },
-        });
 
         return true;
       } catch (error) {

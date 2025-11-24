@@ -18,7 +18,21 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "monospace"],
+      },
+      fontSize: {
+        // Emergency services typography scale (larger base for readability)
+        "emergency-base": ["1.125rem", { lineHeight: "1.5" }], // 18px
+        "emergency-sm": ["1rem", { lineHeight: "1.5" }], // 16px
+        "emergency-xs": ["0.875rem", { lineHeight: "1.3" }], // 14px
+      },
       colors: {
+        // Emergency Services Semantic Colors
+        success: "hsl(var(--success))",
+        warning: "hsl(var(--warning))",
+        info: "hsl(var(--info))",
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",

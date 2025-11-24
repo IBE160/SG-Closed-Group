@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hva Skjer - Color Theme Explorer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e5e7eb;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+
+        .header {
+            max-width: 1600px;
+            margin: 0 auto 3rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #9ca3af;
+            font-size: 1.1rem;
+        }
+
+        .themes-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: grid;
+            gap: 3rem;
+        }
+
+        .theme-card {
+            background: #1a1a1a;
+            border-radius: 16px;
+            padding: 2rem;
+            border: 2px solid #2a2a2a;
+            transition: border-color 0.3s;
+        }
+
+        .theme-card:hover {
+            border-color: #3b82f6;
+        }
+
+        .theme-header {
+            margin-bottom: 2rem;
+        }
+
+        .theme-header h2 {
+            font-size: 1.75rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .theme-badge {
+            padding: 0.25rem 0.75rem;
+            background: #3b82f6;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .theme-description {
+            color: #9ca3af;
+            font-size: 1rem;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .color-swatch {
+            text-align: center;
+        }
+
+        .color-box {
+            height: 80px;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.75rem;
+        }
+
+        .color-label {
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .color-hex {
+            font-size: 0.75rem;
+            color: #6b7280;
+            font-family: 'Courier New', monospace;
+        }
+
+        .components-demo {
+            background: var(--bg-primary);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+
+        .demo-section {
+            margin-bottom: 2rem;
+        }
+
+        .demo-section h3 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+
+        .btn-primary {
+            background: var(--color-primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: var(--bg-secondary);
+        }
+
+        .btn-danger {
+            background: var(--color-error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            filter: brightness(1.1);
+        }
+
+        .input-group {
+            margin-bottom: 1rem;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: var(--color-primary);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-success {
+            background: rgba(22, 163, 74, 0.2);
+            border: 2px solid var(--color-success);
+            color: var(--color-success);
+        }
+
+        .alert-error {
+            background: rgba(220, 38, 38, 0.2);
+            border: 2px solid var(--color-error);
+            color: var(--color-error);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.2);
+            border: 2px solid var(--color-warning);
+            color: var(--color-warning);
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .card-content {
+            color: var(--text-secondary);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+
+        .badge-pri1 {
+            background: rgba(220, 38, 38, 0.2);
+            color: var(--color-error);
+            border: 1px solid var(--color-error);
+        }
+
+        .badge-normal {
+            background: rgba(100, 116, 139, 0.2);
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .badge-green {
+            background: rgba(22, 163, 74, 0.2);
+            color: var(--color-success);
+            border: 1px solid var(--color-success);
+        }
+
+        /* Theme 1: Emergency Operations Dark (CHOSEN THEME) */
+        .theme-1 {
+            --bg-primary: #020617;
+            --bg-secondary: #0f172a;
+            --bg-tertiary: #1e293b;
+            --border-color: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --color-primary: #3b82f6;
+            --color-success: #16a34a;
+            --color-error: #dc2626;
+            --color-warning: #f59e0b;
+        }
+
+        /* Theme 2: High Contrast Emergency */
+        .theme-2 {
+            --bg-primary: #000000;
+            --bg-secondary: #1a1a1a;
+            --bg-tertiary: #2a2a2a;
+            --border-color: #404040;
+            --text-primary: #ffffff;
+            --text-secondary: #d4d4d4;
+            --color-primary: #60a5fa;
+            --color-success: #22c55e;
+            --color-error: #ef4444;
+            --color-warning: #fbbf24;
+        }
+
+        /* Theme 3: Professional Blue */
+        .theme-3 {
+            --bg-primary: #0c1222;
+            --bg-secondary: #162033;
+            --bg-tertiary: #1e2d44;
+            --border-color: #2a3f5f;
+            --text-primary: #e2e8f0;
+            --text-secondary: #cbd5e1;
+            --color-primary: #2563eb;
+            --color-success: #10b981;
+            --color-error: #dc2626;
+            --color-warning: #f59e0b;
+        }
+
+        /* Theme 4: Warm Emergency */
+        .theme-4 {
+            --bg-primary: #1a0f0a;
+            --bg-secondary: #2a1a12;
+            --bg-tertiary: #3a2519;
+            --border-color: #4a3020;
+            --text-primary: #fef3c7;
+            --text-secondary: #fde68a;
+            --color-primary: #f97316;
+            --color-success: #84cc16;
+            --color-error: #dc2626;
+            --color-warning: #eab308;
+        }
+
+        .personality {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 4px solid #3b82f6;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .personality h4 {
+            margin-bottom: 0.5rem;
+            color: #3b82f6;
+        }
+
+        .personality ul {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .personality li::before {
+            content: "→ ";
+            color: #3b82f6;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 Hva Skjer - Color Theme Explorer</h1>
+        <p>Emergency Response Application - Visual Theme Options</p>
+    </div>
+
+    <div class="themes-container">
+        <!-- THEME 1: Emergency Operations Dark (CHOSEN) -->
+        <div class="theme-card">
+            <div class="theme-header">
+                <h2>
+                    Theme 1: Emergency Operations Dark
+                    <span class="theme-badge">CHOSEN ✓</span>
+                </h2>
+                <p class="theme-description">Professional dark mode optimized for 24/7 operations. High contrast with emergency service color coding. Perfect for low-light and high-stress environments.</p>
+            </div>
+
+            <div class="personality">
+                <h4>🎯 Personality & Use Case</h4>
+                <ul>
+                    <li><strong>Emotional Impact:</strong> Professional, focused, trustworthy</li>
+                    <li><strong>Best For:</strong> Emergency services, 24/7 operations, government work</li>
+                    <li><strong>Visual Style:</strong> Minimal, functional, high contrast</li>
+                    <li><strong>Accessibility:</strong> WCAG AA compliant, colorblind-safe</li>
+                </ul>
+            </div>
+
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #020617; color: #f1f5f9;">Aa</div>
+                    <div class="color-label">Primary BG</div>
+                    <div class="color-hex">#020617</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #0f172a; color: #f1f5f9;">Aa</div>
+                    <div class="color-label">Secondary BG</div>
+                    <div class="color-hex">#0f172a</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #334155; color: #f1f5f9;">Aa</div>
+                    <div class="color-label">Border</div>
+                    <div class="color-hex">#334155</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #3b82f6; color: white;">Aa</div>
+                    <div class="color-label">Primary (Blue)</div>
+                    <div class="color-hex">#3b82f6</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #16a34a; color: white;">Aa</div>
+                    <div class="color-label">Success (Green)</div>
+                    <div class="color-hex">#16a34a</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #dc2626; color: white;">Aa</div>
+                    <div class="color-label">Error (Red)</div>
+                    <div class="color-hex">#dc2626</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #f59e0b; color: white;">Aa</div>
+                    <div class="color-label">Warning (Amber)</div>
+                    <div class="color-hex">#f59e0b</div>
+                </div>
+            </div>
+
+            <div class="components-demo theme-1">
+                <div class="demo-section">
+                    <h3>Buttons</h3>
+                    <div class="button-group">
+                        <button class="btn btn-primary">Lagre (Primary)</button>
+                        <button class="btn btn-secondary">Avbryt (Secondary)</button>
+                        <button class="btn btn-danger">Slett (Danger)</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <h3>Form Inputs</h3>
+                    <div class="input-group">
+                        <label>Tittel</label>
+                        <input type="text" placeholder="E39 stengt - trafikkulykke" />
+                    </div>
+                    <div class="input-group">
+                        <label>Beskrivelse</label>
+                        <textarea rows="3" placeholder="Mellom Forus og Sandnes..."></textarea>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <h3>Alerts & Feedback</h3>
+                    <div class="alert alert-success">
+                        ✓ Melding lagret
+                    </div>
+                    <div class="alert alert-error">
+                        ✗ Kunne ikke lagre - prøv igjen
+                    </div>
+                    <div class="alert alert-warning">
+                        ⚠ Ingen tilkobling - prøver igjen...
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <h3>Event Cards</h3>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="badge badge-pri1">Pri 1</span>
+                            E39 stengt - trafikkulykke
+                        </div>
+                        <div class="card-content">
+                            Mellom Forus og Sandnes, ventet åpning 18:00
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="badge badge-normal">Normal</span>
+                            Røykøvelse Brannstasjonen
+                        </div>
+                        <div class="card-content">
+                            Planlagt røykøvelse i dag kl 14:00-16:00
+                        </div>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <h3>Vehicle Status</h3>
+                    <div style="display: flex; gap: 1rem;">
+                        <div style="flex: 1; padding: 1.5rem; background: rgba(22, 163, 74, 0.2); border: 2px solid #16a34a; border-radius: 8px; text-align: center;">
+                            <div style="font-weight: 700; font-size: 1.25rem; margin-bottom: 0.5rem;">S111</div>
+                            <span class="badge badge-green">Klar</span>
+                        </div>
+                        <div style="flex: 1; padding: 1.5rem; background: rgba(220, 38, 38, 0.2); border: 2px solid #dc2626; border-radius: 8px; text-align: center;">
+                            <div style="font-weight: 700; font-size: 1.25rem; margin-bottom: 0.5rem;">S112</div>
+                            <span class="badge badge-pri1">Ute</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THEME 2: High Contrast Emergency -->
+        <div class="theme-card">
+            <div class="theme-header">
+                <h2>Theme 2: High Contrast Emergency</h2>
+                <p class="theme-description">Maximum contrast for extreme readability. Pure black background with bright accent colors. Ideal for operators with visual preferences or very bright/dark environments.</p>
+            </div>
+
+            <div class="personality">
+                <h4>🎯 Personality & Use Case</h4>
+                <ul>
+                    <li><strong>Emotional Impact:</strong> Stark, clear, unambiguous</li>
+                    <li><strong>Best For:</strong> High accessibility needs, bright screen environments</li>
+                    <li><strong>Visual Style:</strong> Extreme contrast, bold, clinical</li>
+                    <li><strong>Accessibility:</strong> WCAG AAA contrast ratios</li>
+                </ul>
+            </div>
+
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #000000; color: #ffffff;">Aa</div>
+                    <div class="color-label">Primary BG</div>
+                    <div class="color-hex">#000000</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #1a1a1a; color: #ffffff;">Aa</div>
+                    <div class="color-label">Secondary BG</div>
+                    <div class="color-hex">#1a1a1a</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #404040; color: #ffffff;">Aa</div>
+                    <div class="color-label">Border</div>
+                    <div class="color-hex">#404040</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #60a5fa; color: white;">Aa</div>
+                    <div class="color-label">Primary (Blue)</div>
+                    <div class="color-hex">#60a5fa</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #22c55e; color: white;">Aa</div>
+                    <div class="color-label">Success (Green)</div>
+                    <div class="color-hex">#22c55e</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #ef4444; color: white;">Aa</div>
+                    <div class="color-label">Error (Red)</div>
+                    <div class="color-hex">#ef4444</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #fbbf24; color: black;">Aa</div>
+                    <div class="color-label">Warning (Yellow)</div>
+                    <div class="color-hex">#fbbf24</div>
+                </div>
+            </div>
+
+            <div class="components-demo theme-2">
+                <div class="demo-section">
+                    <h3>Buttons</h3>
+                    <div class="button-group">
+                        <button class="btn btn-primary">Lagre (Primary)</button>
+                        <button class="btn btn-secondary">Avbryt (Secondary)</button>
+                        <button class="btn btn-danger">Slett (Danger)</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <h3>Event Card Example</h3>
+                    <div class="card">
+                        <div class="card-title">
+                            <span class="badge badge-pri1">Pri 1</span>
+                            Høykontrast tema - maksimal lesbarhet
+                        </div>
+                        <div class="card-content">
+                            Perfekt for operatører med synspreferanser eller svært lyse/mørke miljøer
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THEME 3: Professional Blue -->
+        <div class="theme-card">
+            <div class="theme-header">
+                <h2>Theme 3: Professional Blue</h2>
+                <p class="theme-description">Deep blue-tinted dark theme with professional government aesthetic. Slightly warmer than pure dark, reduces eye strain during long shifts.</p>
+            </div>
+
+            <div class="personality">
+                <h4>🎯 Personality & Use Case</h4>
+                <ul>
+                    <li><strong>Emotional Impact:</strong> Trustworthy, calm, authoritative</li>
+                    <li><strong>Best For:</strong> Government applications, long shifts, data-heavy interfaces</li>
+                    <li><strong>Visual Style:</strong> Professional, slightly warmer, government-like</li>
+                    <li><strong>Accessibility:</strong> WCAG AA compliant, reduced eye strain</li>
+                </ul>
+            </div>
+
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #0c1222; color: #e2e8f0;">Aa</div>
+                    <div class="color-label">Primary BG</div>
+                    <div class="color-hex">#0c1222</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #162033; color: #e2e8f0;">Aa</div>
+                    <div class="color-label">Secondary BG</div>
+                    <div class="color-hex">#162033</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #2a3f5f; color: #e2e8f0;">Aa</div>
+                    <div class="color-label">Border</div>
+                    <div class="color-hex">#2a3f5f</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #2563eb; color: white;">Aa</div>
+                    <div class="color-label">Primary (Blue)</div>
+                    <div class="color-hex">#2563eb</div>
+                </div>
+            </div>
+
+            <div class="components-demo theme-3">
+                <div class="demo-section">
+                    <h3>Professional Blue Theme</h3>
+                    <div class="card">
+                        <div class="card-title">Redusert øyebelastning</div>
+                        <div class="card-content">
+                            Blåtonede mørke farger reduserer øyebelastning under lange skift
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- THEME 4: Warm Emergency -->
+        <div class="theme-card">
+            <div class="theme-header">
+                <h2>Theme 4: Warm Emergency</h2>
+                <p class="theme-description">Warm, amber-tinted dark theme. Less common for emergency services but unique visual identity. May reduce blue light exposure during night shifts.</p>
+            </div>
+
+            <div class="personality">
+                <h4>🎯 Personality & Use Case</h4>
+                <ul>
+                    <li><strong>Emotional Impact:</strong> Alert, warm, energetic</li>
+                    <li><strong>Best For:</strong> Night shifts, reduced blue light, unique branding</li>
+                    <li><strong>Visual Style:</strong> Warm, distinctive, fire-inspired</li>
+                    <li><strong>Accessibility:</strong> WCAG AA, amber reduces blue light</li>
+                </ul>
+            </div>
+
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #1a0f0a; color: #fef3c7;">Aa</div>
+                    <div class="color-label">Primary BG</div>
+                    <div class="color-hex">#1a0f0a</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #2a1a12; color: #fef3c7;">Aa</div>
+                    <div class="color-label">Secondary BG</div>
+                    <div class="color-hex">#2a1a12</div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-box" style="background: #f97316; color: white;">Aa</div>
+                    <div class="color-label">Primary (Orange)</div>
+                    <div class="color-hex">#f97316</div>
+                </div>
+            </div>
+
+            <div class="components-demo theme-4">
+                <div class="demo-section">
+                    <h3>Warm Emergency Theme</h3>
+                    <div class="card">
+                        <div class="card-title">Varmt brannvesen-tema</div>
+                        <div class="card-content">
+                            Gylne toner inspirert av brann og redning. Unik visuell identitet.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div style="max-width: 1600px; margin: 3rem auto; text-align: center; color: #6b7280;">
+        <p>🎨 Generated with <a href="https://claude.com/claude-code" style="color: #3b82f6;">Claude Code</a> - BMad UX Design Workflow</p>
+    </div>
+
+</body>
+</html>
