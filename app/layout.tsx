@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppLayout } from "@/components/layout/app-layout";
+import { SSEProvider } from "@/components/providers/SSEProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -43,7 +44,9 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}
       >
-        <AppLayout>{children}</AppLayout>
+        <SSEProvider>
+          <AppLayout>{children}</AppLayout>
+        </SSEProvider>
       </body>
     </html>
   );
