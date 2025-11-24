@@ -1,0 +1,256 @@
+import { createAzure } from '@ai-sdk/azure';
+import { streamText, tool } from 'ai';
+import { z } from 'zod';
+import { prisma } from '@/lib/prisma';
+
+// Initialize Azure OpenAI client
+const azure = createAzure({
+  resourceName: process.env.AZURE_OPENAI_ENDPOINT!.split('//')[1].split('.')[0],
+  apiKey: process.env.AZURE_OPENAI_API_KEY!,
+});
+
+const model = azure(process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o');
+
+// System prompt - defines chatbot behavior
+const SYSTEM_PROMPT = `Du er en profesjonell assistent for 110 Sør-Vest som hjelper borgere med å registrere bålmeldinger.
+
+**Din rolle:**
+- Vær vennlig, tydelig og effektiv
+- Snakk norsk (bokmål)
+- Innhent nødvendig informasjon i naturlig dialog
+- Valider data underveis
+- Bekreft at alt er riktig før lagring
+
+**Obligatorisk informasjon:**
+1. Fullt navn (fornavn og etternavn)
+2. Telefonnummer (norsk 8-siffers nummer)
+3. E-postadresse (valgfritt, men anbefalt)
+4. Nøyaktig adresse (må valideres med Google Maps)
+5. Kommune
+6. Dato og klokkeslett for start av bålet
+7. Estimert varighet (timer)
+8. Hva som skal brennes
+9. Estimert størrelse (velg: liten/medium/stor/meget stor)
+
+**Tilleggsinformasjon for større bål:**
+- Område som omfattes (kvadratmeter/dekar)
+- Beste tilkomst for brannbiler
+- Spesielle hensyn (nærhet til skog, bebyggelse, etc.)
+
+**Viktige regler:**
+- Ikke still mer enn 2-3 spørsmål om gangen
+- Hvis brukeren gir mye info på en gang, registrer alt og be om det som mangler
+- Valider telefonnummer med validatePhoneNumber
+- Valider ALLTID adresse med validateAddress før du fortsetter
+- Hvis adresse ikke finnes, hjelp brukeren med å presisere (legg til postnummer, sted, osv)
+- Når ALL info er samlet, vis en oppsummering og be om bekreftelse
+- Bruk saveBonfireNotification først ETTER bekreftelse
+
+**Tone:**
+Profesjonell men vennlig. Dette er en viktig sikkerhetstjeneste.`;
+
+export async function POST(req: Request) {
+  const { messages } = await req.json();
+
+  const result = await streamText({
+    model,
+    system: SYSTEM_PROMPT,
+    messages,
+    temperature: 0.7,
+    maxTokens: 1000,
+
+    tools: {
+      // Tool 1: Validate phone number
+      validatePhoneNumber: tool({
+        description: 'Validerer et norsk telefonnummer (8 siffer)',
+        parameters: z.object({
+          phoneNumber: z.string().describe('Telefonnummeret som skal valideres'),
+        }),
+        execute: async ({ phoneNumber }) => {
+          // Remove spaces, dashes, +47, etc.
+          const cleaned = phoneNumber
+            .replace(/\s/g, '')
+            .replace(/-/g, '')
+            .replace(/^\+47/, '')
+            .replace(/^0047/, '');
+
+          // Norwegian mobile numbers: 8 digits starting with 4 or 9
+          const isValid = /^[49]\d{7}$/.test(cleaned);
+
+          return {
+            isValid,
+            cleaned,
+            formatted: isValid ? `${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5)}` : null,
+            message: isValid
+              ? `Gyldig norsk nummer: ${cleaned.slice(0, 3)} ${cleaned.slice(3, 5)} ${cleaned.slice(5)}`
+              : 'Ugyldig nummer. Norske mobilnummer er 8 siffer og starter med 4 eller 9.',
+          };
+        },
+      }),
+
+      // Tool 2: Validate address with Google Geocoding API
+      validateAddress: tool({
+        description: 'Validerer norsk adresse og henter koordinater via Google Maps Geocoding API',
+        parameters: z.object({
+          address: z.string().describe('Adressen som skal valideres (gjerne med postnummer)'),
+        }),
+        execute: async ({ address }) => {
+          const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+          if (!apiKey) {
+            return {
+              success: false,
+              message: 'Google Maps API-nøkkel mangler. Kontakt systemadministrator.',
+            };
+          }
+
+          // Google Geocoding API - bias towards Norway
+          const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&region=no&components=country:NO&key=${apiKey}`;
+
+          try {
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.status === 'OK' && data.results.length > 0) {
+              const result = data.results[0];
+              const location = result.geometry.location;
+
+              // Extract components
+              const components = result.address_components;
+
+              const municipality = components.find(
+                (c: any) => c.types.includes('postal_town') ||
+                           c.types.includes('locality') ||
+                           c.types.includes('administrative_area_level_2')
+              )?.long_name || 'Ukjent kommune';
+
+              const postalCode = components.find(
+                (c: any) => c.types.includes('postal_code')
+              )?.long_name;
+
+              const streetNumber = components.find(
+                (c: any) => c.types.includes('street_number')
+              )?.long_name;
+
+              const route = components.find(
+                (c: any) => c.types.includes('route')
+              )?.long_name;
+
+              return {
+                success: true,
+                formattedAddress: result.formatted_address,
+                latitude: location.lat,
+                longitude: location.lng,
+                municipality,
+                postalCode,
+                streetAddress: streetNumber && route ? `${route} ${streetNumber}` : null,
+                locationType: result.geometry.location_type,
+              };
+            } else if (data.status === 'ZERO_RESULTS') {
+              return {
+                success: false,
+                message: 'Fant ikke adressen. Kan du oppgi mer detaljert adresse? (F.eks: Kirkegata 12, 4006 Stavanger)',
+                suggestion: 'Legg til postnummer eller stedsnavn',
+              };
+            } else if (data.status === 'REQUEST_DENIED') {
+              return {
+                success: false,
+                message: 'Google Maps API-feil. Kontakt systemadministrator.',
+              };
+            } else {
+              return {
+                success: false,
+                message: `Google Maps feil: ${data.status}`,
+              };
+            }
+          } catch (error) {
+            console.error('Geocoding error:', error);
+            return {
+              success: false,
+              message: 'Teknisk feil ved adressevalidering. Prøv igjen.',
+            };
+          }
+        },
+      }),
+
+      // Tool 3: Save bonfire notification to database
+      saveBonfireNotification: tool({
+        description: 'Lagrer den komplette bålmeldingen til databasen. Bruk først ETTER at brukeren har bekreftet all informasjon.',
+        parameters: z.object({
+          name: z.string().min(2).describe('Fullt navn (fornavn og etternavn)'),
+          phone: z.string().regex(/^[49]\d{7}$/).describe('Norsk mobilnummer (8 siffer)'),
+          email: z.string().email().optional().describe('E-postadresse (valgfritt)'),
+          address: z.string().describe('Fullstendig adresse (fra Google Maps)'),
+          municipality: z.string().describe('Kommune'),
+          latitude: z.number().min(58).max(72).describe('Breddegrad'),
+          longitude: z.number().min(4).max(32).describe('Lengdegrad'),
+          dateFrom: z.string().datetime().describe('Start dato og tid (ISO 8601)'),
+          dateTo: z.string().datetime().describe('Slutt dato og tid (ISO 8601)'),
+          description: z.string().min(10).describe('Beskrivelse: hva brennes, størrelse, tilkomst, spesielle hensyn'),
+        }),
+        execute: async (data) => {
+          try {
+            // Validate that date is in the future
+            const startDate = new Date(data.dateFrom);
+            if (startDate < new Date()) {
+              return {
+                success: false,
+                message: 'Start-tidspunkt kan ikke være i fortiden. Vennligst oppgi fremtidig dato.',
+              };
+            }
+
+            // Validate that end is after start
+            const endDate = new Date(data.dateTo);
+            if (endDate <= startDate) {
+              return {
+                success: false,
+                message: 'Slutt-tidspunkt må være etter start-tidspunkt.',
+              };
+            }
+
+            // Create bonfire notification in database
+            const notification = await prisma.bonfireNotification.create({
+              data: {
+                name: data.name,
+                phone: data.phone,
+                email: data.email || `${data.phone}@temporary.no`,
+                address: data.address,
+                municipality: data.municipality,
+                latitude: data.latitude,
+                longitude: data.longitude,
+                dateFrom: startDate,
+                dateTo: endDate,
+                description: data.description,
+                status: 'ACTIVE',
+                geocodedAt: new Date(),
+              },
+            });
+
+            // Log to audit trail
+            console.log('Bonfire notification created:', {
+              id: notification.id,
+              municipality: notification.municipality,
+              date: notification.dateFrom,
+            });
+
+            return {
+              success: true,
+              id: notification.id,
+              message: `✅ Bålmeldingen er nå registrert!\n\nOperatørene på 110 Sør-Vest kan se den på kartet.\n\nReferansenummer: ${notification.id.slice(0, 8).toUpperCase()}\n\nHusk: Ring 110 hvis bålet utvikler seg uventet!`,
+            };
+          } catch (error) {
+            console.error('Error saving bonfire notification:', error);
+
+            return {
+              success: false,
+              message: 'Kunne ikke lagre bålmeldingen. Teknisk feil. Vennligst kontakt 110 Sør-Vest direkte på telefon.',
+              error: error instanceof Error ? error.message : 'Unknown error',
+            };
+          }
+        },
+      }),
+    },
+  });
+
+  return result.toDataStreamResponse();
+}

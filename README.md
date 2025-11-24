@@ -10,8 +10,25 @@ This system provides daily operations support for emergency operators, including
 - **Daily Information Board** - Operational notices and important messages
 - **Duty Roster** - Weekly personnel assignments
 - **Bonfire Notification Map** - Public registration and operator verification system
+- **AI Chatbot** - Intelligent bonfire registration via natural language conversation (NEW!)
 
 Built with Next.js 14, TypeScript, Prisma, and Google OAuth.
+
+### ✨ NEW: AI-Powered Bonfire Registration
+
+We've replaced the old Forms-based registration with an intelligent **AI chatbot** that:
+- Collects information through natural Norwegian conversation
+- Validates phone numbers in real-time (Norwegian 8-digit format)
+- Verifies addresses using Google Maps Geocoding API
+- Provides better user experience and higher data quality
+- **Powered by AI** - Choose between:
+  - **Azure OpenAI GPT-4o** (RECOMMENDED for production/student accounts)
+  - **Claude 3.5 Haiku** (Alternative for quick testing)
+
+📚 **Setup guides:**
+- 👉 **[Azure OpenAI Setup](./AZURE_OPENAI_SETUP.md)** - Step-by-step for student accounts (RECOMMENDED)
+- 👉 **[Anthropic Claude Setup](./CHATBOT_SETUP.md)** - Quick alternative
+- 👉 **[Migration Guide](./MIGRATE_TO_AZURE.md)** - Switch from Claude to Azure
 
 ## Tech Stack
 
@@ -19,8 +36,9 @@ Built with Next.js 14, TypeScript, Prisma, and Google OAuth.
 - **Language**: TypeScript
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: Google OAuth via NextAuth.js
+- **AI**: Azure OpenAI GPT-4o or Claude 3.5 Haiku (via Vercel AI SDK)
 - **Styling**: Tailwind CSS with shadcn/ui
-- **Maps**: Google Maps API
+- **Maps**: Google Maps API (Geocoding & Maps JavaScript API)
 - **Deployment**: Vercel
 
 ## Getting Started
@@ -30,7 +48,10 @@ Built with Next.js 14, TypeScript, Prisma, and Google OAuth.
 - Node.js 22.x or 24.x LTS
 - PostgreSQL database (cloud-hosted: Vercel Postgres, Supabase, or Neon)
 - Google OAuth credentials
-- Google Maps API key
+- Google Maps API key (Geocoding API & Maps JavaScript API)
+- **AI Provider** (choose one):
+  - **Azure OpenAI** (RECOMMENDED) - Azure for Students ($100 free credit) → [Setup Guide](./AZURE_OPENAI_SETUP.md)
+  - **Anthropic Claude** - $5 free credit → [Setup Guide](./CHATBOT_SETUP.md)
 
 ### Installation
 
@@ -57,6 +78,9 @@ Edit `.env` with your credentials:
 - `GOOGLE_CLIENT_ID` - From Google Cloud Console
 - `GOOGLE_CLIENT_SECRET` - From Google Cloud Console
 - `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` - From Google Cloud Console
+- **AI Provider** (choose one):
+  - `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_DEPLOYMENT` - See [Azure Setup](./AZURE_OPENAI_SETUP.md)
+  - `ANTHROPIC_API_KEY` - From https://console.anthropic.com
 
 4. Run Prisma migrations:
 ```bash
@@ -71,22 +95,35 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### Testing the AI Chatbot
+
+Visit **[http://localhost:3000/bonfire-registration](http://localhost:3000/bonfire-registration)** to test the AI-powered bonfire registration chatbot!
+
+See **[CHATBOT_SETUP.md](./CHATBOT_SETUP.md)** for detailed setup instructions and testing scenarios.
+
 ## Project Structure
 
 ```
-├── app/                    # Next.js App Router pages
-│   ├── api/               # API routes
-│   ├── auth/              # Authentication pages
-│   └── ...                # Application pages
-├── components/            # React components
-├── lib/                   # Utility functions and configurations
-│   ├── prisma.ts         # Prisma client
-│   ├── auth.ts           # NextAuth configuration
-│   └── utils.ts          # Helper functions
-├── prisma/               # Database schema and migrations
-│   └── schema.prisma     # Prisma schema
-├── public/               # Static assets
-└── types/                # TypeScript type definitions
+├── app/                              # Next.js App Router pages
+│   ├── api/                         # API routes
+│   │   ├── auth/                    # NextAuth endpoints
+│   │   └── chat/bonfire/            # 🆕 AI chatbot API
+│   ├── bonfire-registration/        # 🆕 Chatbot frontend
+│   ├── auth/                        # Authentication pages
+│   └── ...                          # Application pages
+├── components/                      # React components
+├── lib/                             # Utility functions and configurations
+│   ├── prisma.ts                   # Prisma client
+│   ├── auth.ts                     # NextAuth configuration
+│   └── utils.ts                    # Helper functions
+├── prisma/                          # Database schema and migrations
+│   └── schema.prisma               # Prisma schema (includes BonfireNotification)
+├── public/                          # Static assets
+├── types/                           # TypeScript type definitions
+├── CHATBOT_SETUP.md                # 🆕 Anthropic Claude setup guide
+├── AZURE_OPENAI_SETUP.md           # 🆕 Azure OpenAI setup guide (RECOMMENDED)
+├── MIGRATE_TO_AZURE.md             # 🆕 Migration guide: Claude → Azure
+└── .env.example                    # 🆕 Environment variables template
 
 ## Development
 
