@@ -500,6 +500,8 @@ This section shapes all functional and non-functional requirements below.
 - Input sanitization (XSS prevention)
 - SQL injection prevention (Prisma ORM)
 
+> **Implementation Note (ADR-006):** The system uses a hybrid database architecture. Epic 1-4 features (Events, Flash, Vaktplan, Auth) use PostgreSQL with Prisma ORM. Epic 5 (Bålmelding) uses Azure Table Storage to enable parallel development and leverage Azure Student subscription. Both are GDPR-compliant. See [architecture.md](./architecture.md) for details.
+
 ---
 
 ## User Experience Principles

@@ -962,6 +962,8 @@ So that urgent communication is truly instant.
 
 **Technical Scope:** Azure OpenAI email parsing, Power Automate integration, Google Maps API (geocoding, POI, autocomplete), municipality filtering, automatic expiration.
 
+> **Architecture Update (ADR-006):** Epic 5 uses **Azure Table Storage** instead of PostgreSQL/Prisma for bonfire data storage. This was decided to enable parallel development by team members and leverage Azure Student subscription. See [architecture.md](./architecture.md#adr-006-hybrid-database-architecture-postgresql--azure-table-storage) for full rationale. Authentication still uses NextAuth.js with Google OAuth from Epic 2.
+
 ---
 
 ### Story 5.1: Google Maps Integration and Map Display
@@ -987,11 +989,13 @@ So that I can quickly verify if a reported fire is a registered bonfire.
 - Install: `npm install @vis.gl/react-google-maps`
 - Create `/balmelding` page with Google Maps component
 - Configure Google Maps API key in environment variables
-- Create `/api/bonfires` GET endpoint (returns all active bonfires)
-- Render markers for each bonfire with lat/lng from database
+- Create `/api/bonfires` GET endpoint (returns all active bonfires from Azure Table Storage)
+- Use `lib/azure-table.ts` for Azure Table Storage operations
+- Render markers for each bonfire with lat/lng from Azure Table
 - Info window displays: name, phone, address, size, date/time, notes
 - Center map on region (Rogaland, Norway coordinates)
 - Reference PRD FR5.3: Google Maps Integration
+- **Storage:** Azure Table Storage (see ADR-006)
 
 ---
 
@@ -1019,10 +1023,11 @@ So that we have a baseline system before automation.
 - Use shadcn/ui Form with validation (React Hook Form + Zod)
 - Integrate Google Places Autocomplete for address field
 - Call Google Geocoding API on form submit to get lat/lng
-- Store bonfire in BonfireRegistration table
+- Store bonfire in Azure Table Storage via `lib/azure-table.ts`
 - Broadcast new bonfire via SSE/WebSocket to update all maps
 - Municipality dropdown: 29 municipalities (populate from config)
 - Reference PRD FR5.1: Phase 1 (baseline before AI)
+- **Storage:** Azure Table Storage (see ADR-006)
 
 ---
 
