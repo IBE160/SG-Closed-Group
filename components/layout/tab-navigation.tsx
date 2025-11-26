@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { UserProfile } from "./UserProfile";
 
 const tabs = [
   { name: "Hva Skjer", href: "/hva-skjer", shortcut: "1" },
@@ -32,7 +33,7 @@ export function TabNavigation() {
   }, [router]);
 
   return (
-    <nav className="flex h-12 items-center border-b border-border bg-card">
+    <nav className="flex h-12 items-center justify-between border-b border-border bg-card px-2">
       <div className="flex h-full">
         {tabs.map((tab) => {
           const isActive =
@@ -60,6 +61,7 @@ export function TabNavigation() {
           );
         })}
       </div>
+      <UserProfile />
     </nav>
   );
 }

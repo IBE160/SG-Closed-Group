@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppLayout } from "@/components/layout/app-layout";
 import { SSEProvider } from "@/components/providers/SSEProvider";
+import { SessionProvider } from "@/components/providers/SessionProvider";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -44,9 +45,11 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased bg-background text-foreground`}
       >
-        <SSEProvider>
-          <AppLayout>{children}</AppLayout>
-        </SSEProvider>
+        <SessionProvider>
+          <SSEProvider>
+            <AppLayout>{children}</AppLayout>
+          </SSEProvider>
+        </SessionProvider>
       </body>
     </html>
   );
