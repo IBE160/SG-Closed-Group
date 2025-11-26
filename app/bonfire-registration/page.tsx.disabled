@@ -1,34 +1,43 @@
 'use client';
 
-import { useChat } from 'ai/react';
-import { useEffect, useRef } from 'react';
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+import { useEffect, useRef, useState, FormEvent } from 'react';
 
 export default function BonfireRegistrationPage() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
-    api: '/api/chat/bonfire',
+  const [input, setInput] = useState('');
+
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({
+      api: '/api/chat/bonfire',
+    }),
     initialMessages: [
       {
         id: 'welcome',
         role: 'assistant',
-        content: 'Hei! 👋 Jeg hjelper deg med å registrere en bålmelding til 110 Sør-Vest.\n\nLa oss begynne - hva er navnet ditt?',
+        content: 'Hei! Jeg hjelper deg med å registrere en bålmelding til 110 Sør-Vest.\n\nLa oss begynne - hva er navnet ditt?',
       },
     ],
-    onFinish: (message) => {
-      // Log completed conversations for analytics
-      if (message.content.includes('✅ Bålmeldingen er nå registrert')) {
-        console.log('Successful bonfire registration');
-      }
-    },
-    onError: (error) => {
-      console.error('Chat error:', error);
+    onError: (err) => {
+      console.error('Chat error:', err);
     },
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isLoading = status === 'streaming' || status === 'submitted';
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isLoading) return;
+
+    const messageText = input;
+    setInput('');
+    await sendMessage({ content: messageText });
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 to-orange-50 flex flex-col">
@@ -100,7 +109,7 @@ export default function BonfireRegistrationPage() {
           <form onSubmit={handleSubmit} className="flex gap-3">
             <input
               value={input}
-              onChange={handleInputChange}
+              onChange={(e) => setInput(e.target.value)}
               placeholder="Skriv ditt svar her..."
               className="flex-1 border-2 border-gray-300 rounded-xl px-5 py-3 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent text-lg"
               disabled={isLoading}

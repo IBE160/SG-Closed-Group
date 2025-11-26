@@ -122,10 +122,10 @@ export async function POST(request: NextRequest) {
         }
       })
 
-    } catch (error: any) {
+    } catch (error) {
       console.error('Google Maps API error:', error)
       return NextResponse.json(
-        { error: 'Feil ved adressevalidering', details: error.message },
+        { error: 'Feil ved adressevalidering', details: error instanceof Error ? error.message : 'Unknown error' },
         { status: 500 }
       )
     }

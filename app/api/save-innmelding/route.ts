@@ -53,21 +53,21 @@ export async function POST(request: NextRequest) {
         rowKey,
         message: 'Innmelding lagret!'
       })
-    } catch (azureError: any) {
+    } catch (azureError) {
       console.error('❌ Feil ved lagring til Azure Tables:', azureError)
       return NextResponse.json(
         {
           error: 'Kunne ikke lagre til Azure Table Storage',
-          details: azureError.message
+          details: azureError instanceof Error ? azureError.message : 'Unknown error'
         },
         { status: 500 }
       )
     }
 
-  } catch (error: any) {
+  } catch (error) {
     console.error('❌ Feil ved prosessering av forespørsel:', error)
     return NextResponse.json(
-      { error: 'Ugyldig forespørsel', details: error.message },
+      { error: 'Ugyldig forespørsel', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 400 }
     )
   }

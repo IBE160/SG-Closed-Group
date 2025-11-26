@@ -1,15 +1,7 @@
-import { createAzure } from '@ai-sdk/azure';
+import { anthropic } from '@ai-sdk/anthropic';
 import { streamText, tool } from 'ai';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-
-// Initialize Azure OpenAI client
-const azure = createAzure({
-  resourceName: process.env.AZURE_OPENAI_ENDPOINT!.split('//')[1].split('.')[0],
-  apiKey: process.env.AZURE_OPENAI_API_KEY!,
-});
-
-const model = azure(process.env.AZURE_OPENAI_DEPLOYMENT || 'gpt-4o');
 
 // System prompt - defines chatbot behavior
 const SYSTEM_PROMPT = `Du er en profesjonell assistent for 110 Sør-Vest som hjelper borgere med å registrere bålmeldinger.
@@ -53,17 +45,17 @@ export async function POST(req: Request) {
   const { messages } = await req.json();
 
   const result = await streamText({
-    model,
+    model: anthropic('claude-3-5-haiku-20241022'),
     system: SYSTEM_PROMPT,
     messages,
     temperature: 0.7,
-    maxTokens: 1000,
+    maxOutputTokens: 1000,
 
     tools: {
       // Tool 1: Validate phone number
       validatePhoneNumber: tool({
         description: 'Validerer et norsk telefonnummer (8 siffer)',
-        parameters: z.object({
+        inputSchema: z.object({
           phoneNumber: z.string().describe('Telefonnummeret som skal valideres'),
         }),
         execute: async ({ phoneNumber }) => {
@@ -91,7 +83,7 @@ export async function POST(req: Request) {
       // Tool 2: Validate address with Google Geocoding API
       validateAddress: tool({
         description: 'Validerer norsk adresse og henter koordinater via Google Maps Geocoding API',
-        parameters: z.object({
+        inputSchema: z.object({
           address: z.string().describe('Adressen som skal valideres (gjerne med postnummer)'),
         }),
         execute: async ({ address }) => {
@@ -119,21 +111,21 @@ export async function POST(req: Request) {
               const components = result.address_components;
 
               const municipality = components.find(
-                (c: any) => c.types.includes('postal_town') ||
+                (c: { types: string[]; long_name: string }) => c.types.includes('postal_town') ||
                            c.types.includes('locality') ||
                            c.types.includes('administrative_area_level_2')
               )?.long_name || 'Ukjent kommune';
 
               const postalCode = components.find(
-                (c: any) => c.types.includes('postal_code')
+                (c: { types: string[]; long_name: string }) => c.types.includes('postal_code')
               )?.long_name;
 
               const streetNumber = components.find(
-                (c: any) => c.types.includes('street_number')
+                (c: { types: string[]; long_name: string }) => c.types.includes('street_number')
               )?.long_name;
 
               const route = components.find(
-                (c: any) => c.types.includes('route')
+                (c: { types: string[]; long_name: string }) => c.types.includes('route')
               )?.long_name;
 
               return {
@@ -176,7 +168,7 @@ export async function POST(req: Request) {
       // Tool 3: Save bonfire notification to database
       saveBonfireNotification: tool({
         description: 'Lagrer den komplette bålmeldingen til databasen. Bruk først ETTER at brukeren har bekreftet all informasjon.',
-        parameters: z.object({
+        inputSchema: z.object({
           name: z.string().min(2).describe('Fullt navn (fornavn og etternavn)'),
           phone: z.string().regex(/^[49]\d{7}$/).describe('Norsk mobilnummer (8 siffer)'),
           email: z.string().email().optional().describe('E-postadresse (valgfritt)'),
@@ -208,21 +200,21 @@ export async function POST(req: Request) {
               };
             }
 
-            // Create bonfire notification in database
-            const notification = await prisma.bonfireNotification.create({
+            // Create bonfire registration in database
+            const notification = await prisma.bonfireRegistration.create({
               data: {
-                name: data.name,
+                registrantName: data.name,
                 phone: data.phone,
-                email: data.email || `${data.phone}@temporary.no`,
                 address: data.address,
                 municipality: data.municipality,
-                latitude: data.latitude,
-                longitude: data.longitude,
+                lat: data.latitude,
+                lng: data.longitude,
+                bonfireSize: 'Medium', // Default size - AI can enhance this later
                 dateFrom: startDate,
                 dateTo: endDate,
-                description: data.description,
+                notes: data.description,
                 status: 'ACTIVE',
-                geocodedAt: new Date(),
+                expiresAt: endDate,
               },
             });
 
@@ -252,5 +244,5 @@ export async function POST(req: Request) {
     },
   });
 
-  return result.toDataStreamResponse();
+  return result.toTextStreamResponse();
 }

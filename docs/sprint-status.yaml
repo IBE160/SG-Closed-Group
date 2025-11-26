@@ -48,13 +48,13 @@ development_status:
   epic-1-retrospective: done
 
   # Epic 2: Authentication & Access Control
-  epic-2: contexted
-  2-1-nextauth-js-configuration-with-google-oauth: backlog
-  2-2-user-whitelist-management-system: backlog
-  2-3-role-based-access-control-rbac-implementation: backlog
-  2-4-protected-routes-and-api-endpoints: backlog
-  2-5-login-page-and-user-profile-ui: backlog
-  2-6-session-management-and-security-hardening: backlog
+  epic-2: done
+  2-1-nextauth-js-configuration-with-google-oauth: done
+  2-2-user-whitelist-management-system: done
+  2-3-role-based-access-control-rbac-implementation: done
+  2-4-protected-routes-and-api-endpoints: done
+  2-5-login-page-and-user-profile-ui: done
+  2-6-session-management-and-security-hardening: done
   epic-2-retrospective: optional
 
   # Epic 3: Event Control Dashboard
@@ -79,12 +79,21 @@ development_status:
   epic-4-retrospective: optional
 
   # Epic 5: Bålmelding (Bonfire) Registration System
-  epic-5: backlog
-  5-1-google-maps-integration-and-map-display: backlog
-  5-2-manual-bonfire-registration-baseline: backlog
-  5-3-azure-openai-email-parsing-phase-1-manual-pilot: backlog
+  # NOTE: Epic 5 uses Azure Table Storage (ADR-006) - separate from Prisma/PostgreSQL
+  # PR #8 (aGrodem:test-av-ai-og-maps) contains initial implementation
+  epic-5: in-progress-parallel  # Developed in parallel by team member
+  5-1-google-maps-integration-and-map-display: done  # PR #8
+  5-2-manual-bonfire-registration-baseline: done  # PR #8
+  5-3-azure-openai-email-parsing-phase-1-manual-pilot: done  # PR #8
   5-4-power-automate-integration-phase-2-email-monitoring: backlog
-  5-5-municipality-filtering-and-search: backlog
+  5-5-municipality-filtering-and-search: done  # PR #8 (29 kommuner hardkodet)
   5-6-automatic-bonfire-expiration: backlog
-  5-7-manual-review-queue-for-flagged-registrations: backlog
+  5-7-manual-review-queue-for-flagged-registrations: done  # PR #8 (admin godkjenning)
   epic-5-retrospective: optional
+
+# INTEGRATION TASKS (ADR-006):
+# These tasks integrate Epic 5 bonfire system with main app auth
+integration_tasks:
+  replace-admin-cookie-with-nextauth: backlog  # Replace ADMIN_PASSWORD cookie auth with NextAuth session
+  protect-bonfire-routes-with-nextauth: backlog  # Add NextAuth middleware to /api/admin/* routes
+  merge-pr-8: backlog  # Merge PR #8 after Epic 2 auth is complete

@@ -1,12 +1,13 @@
 import NextAuth from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
+import Google from "next-auth/providers/google";
 import { prisma } from "@/lib/prisma";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    Google({
+      // NextAuth v5 convention with fallback to legacy names
+      clientId: process.env.AUTH_GOOGLE_ID ?? process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.AUTH_GOOGLE_SECRET ?? process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
 
@@ -85,12 +86,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 
   pages: {
-    signIn: "/auth/signin",
-    error: "/auth/error",
+    signIn: "/login",
+    error: "/access-denied",
   },
 
   session: {
     strategy: "jwt",
-    maxAge: 8 * 60 * 60, // 8 hours
+    maxAge: 16 * 60 * 60, // 16 hours (12-hour shifts + 4-hour buffer)
+    updateAge: 2 * 60 * 60, // Refresh token every 2 hours
   },
 });

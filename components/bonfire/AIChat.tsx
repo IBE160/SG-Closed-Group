@@ -21,11 +21,7 @@ export default function AIChat() {
   const [isOpen, setIsOpen] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-
-  // Ikke vis AIChat på admin-sider
-  if (pathname?.startsWith('/admin')) {
-    return null
-  }
+  const isAdminPage = pathname?.startsWith('/admin')
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -34,6 +30,11 @@ export default function AIChat() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Ikke vis AIChat på admin-sider
+  if (isAdminPage) {
+    return null
+  }
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return
@@ -84,7 +85,7 @@ export default function AIChat() {
         }
         setMessages(prev => [...prev, errorMessage])
       }
-    } catch (error) {
+    } catch {
       const errorMessage: Message = {
         role: 'assistant',
         content: 'Beklager, noe gikk galt. Prøv igjen senere.'

@@ -77,8 +77,9 @@ npm install -D playwright @playwright/test
 | **Runtime** | Node.js | 22.x or 24.x LTS | All | Active LTS support through 2027-2028 |
 | **Framework** | Next.js | 14.x (App Router) | All | Modern routing, server components, Vercel optimization |
 | **Language** | TypeScript | Latest | All | Type safety, better DX, catch errors at compile time |
-| **Database** | PostgreSQL via Vercel Postgres | Latest | All | Seamless Vercel integration, sufficient free tier |
-| **ORM** | Prisma | 6.x | All | Type-safe queries, migrations, great Next.js integration |
+| **Database** | PostgreSQL via Vercel Postgres | Latest | Epic 1-4 | Seamless Vercel integration, sufficient free tier |
+| **Database (Bonfire)** | Azure Table Storage | Latest | Epic 5 | GDPR-compliant NoSQL, student Azure access, parallel development |
+| **ORM** | Prisma | 6.x | Epic 1-4 | Type-safe queries, migrations, great Next.js integration |
 | **Auth** | NextAuth.js v5 (Auth.js) | 5.0.0-beta | Epic 2 | Google OAuth, JWT sessions, Prisma adapter, edge-compatible |
 | **UI Framework** | Tailwind CSS | 3.x | All | Utility-first, fast development, provided by starter |
 | **Component Library** | shadcn/ui | Latest | All | Accessible, customizable, Tailwind-based |
@@ -2267,6 +2268,39 @@ CRON_SECRET="local-cron-secret"
 - Requires cron job for automatic transitions
 - Need custom fire icon SVGs
 - Manual override flag to prevent auto-transitions
+
+---
+
+### ADR-006: Hybrid Database Architecture (PostgreSQL + Azure Table Storage)
+
+**Context:** Project developed in parallel by two students. One student implemented bonfire system using Azure Table Storage while the other implemented core dashboard with PostgreSQL/Prisma. Need to integrate both systems.
+
+**Decision:** Use hybrid database architecture:
+- **PostgreSQL (Prisma)** for: Users, Events, Flash Messages, Vehicle Status, Duty Roster, Audit Logs (Epic 1-4)
+- **Azure Table Storage** for: Bonfire Registrations (Epic 5)
+
+**Rationale:**
+- Parallel development efficiency - students worked independently
+- Azure Table Storage is GDPR-compliant (Microsoft Azure has EU data residency)
+- Azure Student subscription provides free Table Storage access
+- Bonfire data is self-contained with no foreign keys to other entities
+- Avoids complex data migration under time constraints
+- Both solutions are production-ready
+
+**Authentication Integration:**
+- NextAuth.js with Google OAuth remains single auth source for entire app
+- Admin routes in bonfire system protected by NextAuth session
+- Cookie-based admin auth in PR #8 will be replaced with NextAuth middleware
+
+**Consequences:**
+- Two database connections to manage (Prisma + Azure SDK)
+- Bonfire data not queryable via Prisma (separate API layer)
+- Cross-system reporting requires API aggregation
+- Must document this deviation in project report
+- Future migration path: Azure Table → PostgreSQL if needed
+
+**Date:** 2025-11-26
+**Status:** Accepted
 
 ---
 

@@ -1,0 +1,198 @@
+<story-context id="bmm/workflows/4-implementation/story-context/template" v="1.0">
+  <metadata>
+    <epicId>2</epicId>
+    <storyId>2.1</storyId>
+    <title>NextAuth.js Configuration with Google OAuth</title>
+    <status>ready-for-dev</status>
+    <generatedAt>2025-11-24</generatedAt>
+    <generator>BMAD Story Context Workflow</generator>
+    <sourceStoryPath>.bmad-ephemeral/stories/2-1-nextauth-js-configuration-with-google-oauth.md</sourceStoryPath>
+  </metadata>
+
+  <story>
+    <asA>developer</asA>
+    <iWant>to configure NextAuth.js v5 with Google OAuth provider</iWant>
+    <soThat>users can authenticate using their Google accounts</soThat>
+    <tasks>
+      <task id="1" title="Install Dependencies" ac="2.1.1">
+        <subtask id="1.1">Install @auth/prisma-adapter for Prisma integration</subtask>
+        <subtask id="1.2">Verify next-auth@beta (5.0.0-beta.30) is already installed</subtask>
+        <subtask id="1.3">Run npm install and verify no conflicts</subtask>
+      </task>
+      <task id="2" title="Configure Google Cloud Console" ac="2.1.2,2.1.3">
+        <subtask id="2.1">User creates OAuth 2.0 Client ID in Google Cloud Console (manual step)</subtask>
+        <subtask id="2.2">Document required authorized JavaScript origins</subtask>
+        <subtask id="2.3">Document required authorized redirect URIs</subtask>
+        <subtask id="2.4">User adds credentials to environment variables (manual step)</subtask>
+      </task>
+      <task id="3" title="Create Auth Configuration" ac="2.1.1,2.1.5">
+        <subtask id="3.1">Create auth.ts in project root with NextAuth v5 config</subtask>
+        <subtask id="3.2">Configure Google provider with AUTH_GOOGLE_ID and AUTH_GOOGLE_SECRET</subtask>
+        <subtask id="3.3">Configure PrismaAdapter for database persistence</subtask>
+        <subtask id="3.4">Set session strategy to JWT with 16-hour maxAge</subtask>
+        <subtask id="3.5">Configure custom pages (signIn: "/login", error: "/access-denied")</subtask>
+      </task>
+      <task id="4" title="Create API Route Handler" ac="2.1.4">
+        <subtask id="4.1">Create app/api/auth/[...nextauth]/route.ts</subtask>
+        <subtask id="4.2">Export GET and POST handlers from auth.ts</subtask>
+        <subtask id="4.3">Verify route responds to auth endpoints</subtask>
+      </task>
+      <task id="5" title="Create TypeScript Type Extensions" ac="2.1.1">
+        <subtask id="5.1">Create types/next-auth.d.ts with Session and JWT extensions</subtask>
+        <subtask id="5.2">Add id and role fields to session.user type</subtask>
+        <subtask id="5.3">Add id and role fields to JWT type</subtask>
+      </task>
+      <task id="6" title="Update Environment Variables" ac="2.1.1,2.1.3">
+        <subtask id="6.1">Document required environment variables in .env.example or README</subtask>
+        <subtask id="6.2">Add AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET placeholders</subtask>
+        <subtask id="6.3">Verify NEXTAUTH_URL is set correctly for development</subtask>
+      </task>
+      <task id="7" title="Verify Build and Deployment" ac="2.1.6">
+        <subtask id="7.1">Run npm run build - verify no TypeScript errors</subtask>
+        <subtask id="7.2">Run npm run lint - verify no ESLint errors</subtask>
+        <subtask id="7.3">Test auth endpoints respond correctly (/api/auth/providers)</subtask>
+      </task>
+    </tasks>
+  </story>
+
+  <acceptanceCriteria>
+    <criterion id="AC-2.1.1">Google OAuth 2.0 is configured as authentication provider</criterion>
+    <criterion id="AC-2.1.2">OAuth consent screen is properly configured in Google Cloud Console</criterion>
+    <criterion id="AC-2.1.3">Callback URLs are whitelisted for development and production</criterion>
+    <criterion id="AC-2.1.4">NextAuth.js routes work correctly (/api/auth/*)</criterion>
+    <criterion id="AC-2.1.5">Session configuration uses JWT with 16-hour expiration</criterion>
+    <criterion id="AC-2.1.6">Build and lint pass without errors</criterion>
+  </acceptanceCriteria>
+
+  <artifacts>
+    <docs>
+      <doc>
+        <path>docs/tech-spec-epic-2.md</path>
+        <title>Technical Specification - Epic 2: Authentication &amp; Access Control</title>
+        <section>Story 2.1: NextAuth.js Configuration with Google OAuth</section>
+        <snippet>Detailed implementation steps for NextAuth.js v5 with Google OAuth, including configuration patterns, API route setup, and environment variable documentation.</snippet>
+      </doc>
+      <doc>
+        <path>docs/architecture.md</path>
+        <title>Architecture - Hva Skjer Emergency Response Application</title>
+        <section>Security Architecture, Authentication</section>
+        <snippet>Authentication flow using Google OAuth 2.0 via NextAuth.js v5 with JWT sessions (16-hour expiration), whitelist check on signIn callback, and role-based access control.</snippet>
+      </doc>
+      <doc>
+        <path>docs/epics.md</path>
+        <title>Epic 2: Authentication &amp; Access Control</title>
+        <section>Story 2.1</section>
+        <snippet>Story definition and acceptance criteria for NextAuth.js v5 configuration with Google OAuth provider.</snippet>
+      </doc>
+    </docs>
+    <code>
+      <artifact>
+        <path>lib/auth.ts</path>
+        <kind>configuration</kind>
+        <symbol>NextAuth configuration</symbol>
+        <lines>1-97</lines>
+        <reason>EXISTING auth configuration with Google provider, whitelist checking in signIn callback, session callbacks for user role/id. Uses 8-hour session - needs update to 16-hour per AC-2.1.5. Uses GOOGLE_CLIENT_ID/SECRET - may need update to AUTH_GOOGLE_ID/SECRET per NextAuth v5 convention.</reason>
+      </artifact>
+      <artifact>
+        <path>lib/prisma.ts</path>
+        <kind>service</kind>
+        <symbol>prisma client singleton</symbol>
+        <lines>1-50</lines>
+        <reason>Prisma client with audit extension. Use base prisma client (not extended) for PrismaAdapter to avoid conflicts with extensions.</reason>
+      </artifact>
+      <artifact>
+        <path>app/api/auth/[...nextauth]/route.ts</path>
+        <kind>api-route</kind>
+        <symbol>GET, POST handlers</symbol>
+        <lines>1-5</lines>
+        <reason>EXISTING NextAuth route handlers - exports handlers from lib/auth.ts. Already functional.</reason>
+      </artifact>
+      <artifact>
+        <path>prisma/schema.prisma</path>
+        <kind>schema</kind>
+        <symbol>User, Session models</symbol>
+        <lines>56-81</lines>
+        <reason>User model has email, name, whitelisted, role fields. Session model exists. NOTE: Missing Account and VerificationToken models required for full NextAuth adapter support.</reason>
+      </artifact>
+      <artifact>
+        <path>lib/audit-context.ts</path>
+        <kind>service</kind>
+        <symbol>AsyncLocalStorage for request context</symbol>
+        <reason>Audit context using AsyncLocalStorage - can be used for tracking user in auth operations.</reason>
+      </artifact>
+    </code>
+    <dependencies>
+      <ecosystem name="node">
+        <package name="next-auth" version="^5.0.0-beta.30">Already installed - NextAuth.js v5 beta</package>
+        <package name="@auth/prisma-adapter" version="^2.0.0">TO INSTALL - Required for Prisma database adapter</package>
+        <package name="@prisma/client" version="^6.19.0">Already installed - Prisma ORM client</package>
+        <package name="next" version="14.2.15">Already installed - Next.js framework</package>
+        <package name="zod" version="^3.23.8">Already installed - Schema validation</package>
+        <package name="zustand" version="^5.0.8">Already installed - State management</package>
+      </ecosystem>
+    </dependencies>
+  </artifacts>
+
+  <constraints>
+    <constraint type="pattern">Use JWT session strategy (not database sessions) for serverless compatibility</constraint>
+    <constraint type="pattern">Use wrapped API response format: { success: true/false, data/error }</constraint>
+    <constraint type="pattern">Use PrismaAdapter with base Prisma client (not audit-extended) to avoid extension conflicts</constraint>
+    <constraint type="pattern">Error messages should be in Norwegian (per architecture patterns)</constraint>
+    <constraint type="security">16-hour session expiration to accommodate 12-hour shifts + 4-hour buffer</constraint>
+    <constraint type="security">Whitelist check required on signIn callback - deny non-whitelisted users</constraint>
+    <constraint type="naming">Environment variables: AUTH_SECRET, AUTH_GOOGLE_ID, AUTH_GOOGLE_SECRET (NextAuth v5 convention)</constraint>
+    <constraint type="existing">lib/auth.ts already exists with basic auth config - update rather than recreate</constraint>
+  </constraints>
+
+  <interfaces>
+    <interface>
+      <name>NextAuth handlers</name>
+      <kind>API export</kind>
+      <signature>export const { handlers, signIn, signOut, auth } = NextAuth({...})</signature>
+      <path>lib/auth.ts</path>
+    </interface>
+    <interface>
+      <name>Auth API Routes</name>
+      <kind>REST endpoints</kind>
+      <signature>GET/POST /api/auth/[...nextauth] - signin, callback, session, signout, providers</signature>
+      <path>app/api/auth/[...nextauth]/route.ts</path>
+    </interface>
+    <interface>
+      <name>Session type extension</name>
+      <kind>TypeScript declaration</kind>
+      <signature>session.user.id: string, session.user.role: string, session.user.whitelisted: boolean</signature>
+      <path>types/next-auth.d.ts (to create)</path>
+    </interface>
+    <interface>
+      <name>Prisma User model</name>
+      <kind>Database model</kind>
+      <signature>User { id, email, name, whitelisted, role, sessions }</signature>
+      <path>prisma/schema.prisma</path>
+    </interface>
+  </interfaces>
+
+  <tests>
+    <standards>No testing framework currently installed. Architecture specifies Vitest + Playwright. For Story 2.1, focus on manual verification: build passes, lint passes, auth endpoints respond correctly. Unit tests can be added in future stories.</standards>
+    <locations>
+      <location>tests/unit/ (to create)</location>
+      <location>tests/integration/ (to create)</location>
+    </locations>
+    <ideas>
+      <idea ac="AC-2.1.1">Verify Google provider is registered via GET /api/auth/providers</idea>
+      <idea ac="AC-2.1.4">Test auth endpoints return valid responses (not 404/500)</idea>
+      <idea ac="AC-2.1.5">Verify session cookie maxAge is 16 hours (57600 seconds)</idea>
+      <idea ac="AC-2.1.6">npm run build exits with code 0, npm run lint exits with code 0</idea>
+    </ideas>
+  </tests>
+
+  <devNotes>
+    <note type="critical">NextAuth v5 has significant breaking changes from v4. Follow patterns in tech-spec-epic-2.md exactly.</note>
+    <note type="existing">lib/auth.ts already has basic Google OAuth configured - update existing rather than recreate.</note>
+    <note type="existing">Current session maxAge is 8 hours - needs update to 16 hours per acceptance criteria.</note>
+    <note type="existing">Current env vars use GOOGLE_CLIENT_ID/SECRET - consider updating to AUTH_GOOGLE_ID/SECRET per NextAuth v5 convention.</note>
+    <note type="missing">Prisma schema missing Account and VerificationToken models for full NextAuth adapter - may need schema update.</note>
+    <note type="missing">@auth/prisma-adapter package not installed - needs npm install.</note>
+    <note type="pattern">Use base Prisma client for PrismaAdapter, not the audit-extended client.</note>
+    <note type="learning">From Story 1.8: Prisma 6.x extensions work with createAuditedPrismaClient() pattern - keep auth adapter separate from audit extensions.</note>
+  </devNotes>
+</story-context>

@@ -286,7 +286,7 @@ export async function POST(request: NextRequest) {
 
         // Kall Google Maps API direkte
         const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
-        let validateResult: any = {}
+        let validateResult: Record<string, unknown> = {}
 
         if (!apiKey) {
           validateResult = {
@@ -404,7 +404,7 @@ export async function POST(request: NextRequest) {
                 }
               }
             }
-          } catch (error: any) {
+          } catch (error) {
             console.error('Google Maps API error:', error)
             validateResult = {
               success: false,
