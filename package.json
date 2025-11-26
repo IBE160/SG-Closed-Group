@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.42",
+    "@auth/prisma-adapter": "^2.11.1",
     "@hookform/resolvers": "^3.9.1",
     "@prisma/client": "^6.19.0",
     "@radix-ui/react-dialog": "^1.1.15",
