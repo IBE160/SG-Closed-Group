@@ -93,5 +93,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   session: {
     strategy: "jwt",
     maxAge: 16 * 60 * 60, // 16 hours (12-hour shifts + 4-hour buffer)
+    updateAge: 2 * 60 * 60, // Refresh token every 2 hours
   },
 });
