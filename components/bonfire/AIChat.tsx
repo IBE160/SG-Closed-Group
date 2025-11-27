@@ -1,27 +1,25 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useChat } from '@ai-sdk/react'
+import { useRef, useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-
-interface Message {
-  role: 'user' | 'assistant'
-  content: string
-}
 
 export default function AIChat() {
   const pathname = usePathname()
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: 'Hei! Jeg er her for å hjelpe deg med spørsmål om bålmelding. Hva lurer du på?'
-    }
-  ])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const [isCompleted, setIsCompleted] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const isAdminPage = pathname?.startsWith('/admin')
+
+  const { messages, input, handleInputChange, handleSubmit, isLoading, error } = useChat({
+    api: '/api/chat/bonfire',
+    initialMessages: [
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content: 'Hei! Jeg er her for å hjelpe deg med å registrere en bålmelding. Hva heter du, og hvor skal bålet være?'
+      }
+    ],
+  })
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -36,72 +34,10 @@ export default function AIChat() {
     return null
   }
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return
-
-    const userMessage: Message = { role: 'user', content: input }
-    const currentInput = input
-    setMessages(prev => [...prev, userMessage])
-    setInput('')
-    setIsLoading(true)
-
-    try {
-      // Bygg samtalehistorikk (ekskluder første velkomstmelding)
-      const conversationHistory = messages
-        .slice(1) // Hopp over første velkomstmelding
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }))
-
-      const response = await fetch('/api/chat/openai', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: currentInput,
-          conversationHistory: conversationHistory
-        }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.response
-        }
-        setMessages(prev => [...prev, assistantMessage])
-
-        // Hvis bålmelding ble lagret, sett completed flag
-        if (data.saved) {
-          setIsCompleted(true)
-        }
-      } else {
-        const errorMessage: Message = {
-          role: 'assistant',
-          content: `Feil: ${data.error || 'Kunne ikke få svar fra AI'}`
-        }
-        setMessages(prev => [...prev, errorMessage])
-      }
-    } catch {
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: 'Beklager, noe gikk galt. Prøv igjen senere.'
-      }
-      setMessages(prev => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
-    }
-  }
+  // Sjekk om bålmelding er lagret (siste melding inneholder referansenummer)
+  const lastMessage = messages[messages.length - 1]
+  const isCompleted = lastMessage?.role === 'assistant' &&
+    lastMessage.content.includes('Referansenummer:')
 
   return (
     <>
@@ -134,14 +70,14 @@ export default function AIChat() {
           {/* Header */}
           <div className="bg-blue-600 text-white p-4 rounded-t-lg">
             <h3 className="font-semibold text-lg">AI Assistent - Bålmelding</h3>
-            <p className="text-sm text-blue-100">Spør meg om hva som helst!</p>
+            <p className="text-sm text-blue-100">Jeg hjelper deg med å registrere bålmelding</p>
           </div>
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, index) => (
+            {messages.map((msg) => (
               <div
-                key={index}
+                key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
@@ -166,6 +102,13 @@ export default function AIChat() {
                 </div>
               </div>
             )}
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-red-100 text-red-800 p-3 rounded-lg">
+                  <p className="text-sm">Feil: {error.message}</p>
+                </div>
+              </div>
+            )}
             <div ref={messagesEndRef} />
           </div>
 
@@ -173,27 +116,27 @@ export default function AIChat() {
           <div className="p-4 border-t border-gray-200">
             {isCompleted && (
               <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                <p className="text-sm font-semibold text-green-800">✅ Da er skjema sendt, takk for at du melder ifra!</p>
+                <p className="text-sm font-semibold text-green-800">Da er bålmeldingen registrert!</p>
                 <p className="text-xs text-green-600 mt-1">Refresh siden for å starte en ny melding</p>
               </div>
             )}
-            <div className="flex space-x-2">
+            <form onSubmit={handleSubmit} className="flex space-x-2">
               <input
                 type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
+                onChange={handleInputChange}
                 placeholder="Skriv din melding..."
                 className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-800"
+                disabled={isCompleted}
               />
               <button
-                onClick={sendMessage}
-                disabled={isLoading || !input.trim()}
+                type="submit"
+                disabled={isLoading || !input.trim() || isCompleted}
                 className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
               >
                 Send
               </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
