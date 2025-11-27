@@ -58,14 +58,18 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: Event Control Dashboard
-  epic-3: backlog
-  3-1-event-management-create-and-list-events: backlog
-  3-2-event-management-edit-and-delete-events: backlog
-  3-3-priority-system-and-filtering: backlog
-  3-4-bilstatus-vehicle-rotation-status-display-and-toggle: backlog
-  3-5-bilstatus-grey-status-with-notes: backlog
-  3-6-vaktplan-duty-roster-display: backlog
-  3-7-vaktplan-administrator-editing: backlog
+  # NOTE: Story 3.6/3.7 restructured (correct-course 2025-11-27)
+  # - Vaktplan changed from generic positions to fixed fields (Vakt09, Lederstøtte)
+  # - New Story 3.8 added for Talegrupper feature
+  epic-3: contexted
+  3-1-event-management-create-and-list-events: done
+  3-2-event-management-edit-and-delete-events: done
+  3-3-priority-system-and-filtering: done
+  3-4-bilstatus-vehicle-rotation-status-display-and-toggle: done
+  3-5-bilstatus-grey-status-with-notes: done
+  3-6-vaktplan-duty-roster-display: in-progress  # Reimplementing with fixed fields
+  3-7-vaktplan-administrator-editing: in-progress  # Reimplementing with fixed fields
+  3-8-talegrupper-radio-talk-groups: drafted  # NEW - Talegrupper feature
   epic-3-retrospective: optional
 
   # Epic 4: Flash Message System

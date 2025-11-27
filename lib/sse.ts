@@ -12,6 +12,10 @@ export type SSEEventType =
   | "event_updated"
   | "event_deleted"
   | "bilstatus_update"
+  | "vaktplan_update"
+  | "talegruppe_created"
+  | "talegruppe_updated"
+  | "talegruppe_deleted"
   | "bonfire_created"
   | "bonfire_status_update"
   | "test_broadcast";

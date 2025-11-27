@@ -723,25 +723,41 @@ Every interaction is optimized to minimize time between intent and action. In em
 ### FR4: Vaktplan (Duty Roster)
 
 **FR4.1 - Weekly Overview**
-- Display current week's duty assignments
-- Key positions: vakthavende brannsjef, innsatsleder brann, etc.
-- Position name + assigned person name
+- Display current week's duty assignments with FIXED fields:
+  - **Vakt09**: Person name (single field)
+  - **Lederstøtte**: Person name AND phone number (two fields)
 - Located below bilstatus in top-right of "Hva Skjer" folder
+- Week navigation (previous/next week buttons)
 
 **Acceptance Criteria:**
-- All positions displayed clearly
+- Vakt09 shows assigned name
+- Lederstøtte shows both name and phone number
 - Current week auto-detected from system date
 - Layout fits in allocated space
 
 **FR4.2 - Roster Updates**
-- Administrators can update assignments
+- Administrators can update Vakt09 and Lederstøtte assignments
 - Week selection (current week or future weeks)
-- Changes visible immediately to all dispatchers
+- Changes visible immediately to all dispatchers via SSE
 
 **Acceptance Criteria:**
 - Edit interface simple and fast
 - Week navigation intuitive
 - Changes audit-logged
+
+**FR4.3 - Talegrupper (Radio Talk Groups)**
+- Section below Vaktplan for assigned radio talk groups
+- Each entry has:
+  - Talegruppe name (e.g., "Skogbrann-01")
+  - Description/details (e.g., "06-Brann-19")
+- Administrators can add, edit, and delete talegrupper
+- Similar visual design to Priority (Pri 1) in Viktige meldinger
+
+**Acceptance Criteria:**
+- Talegrupper displayed in dedicated section below Vaktplan
+- Admin can CRUD talegrupper
+- Real-time sync across all dispatchers
+- All changes audit-logged
 
 ### FR5: Bålmelding (Bonfire Registration)
 

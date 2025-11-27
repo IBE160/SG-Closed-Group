@@ -676,28 +676,29 @@ So that everyone knows why the vehicle is unavailable.
 ### Story 3.6: Vaktplan (Duty Roster) Display
 
 As a dispatcher,
-I want to see the current week's duty roster,
-So that I know who is assigned to key positions.
+I want to see the current week's duty roster with fixed fields,
+So that I know who is assigned to Vakt09 and Lederstøtte.
 
 **Acceptance Criteria:**
 
 **Given** I view the "Hva Skjer" folder
 **When** I look at the bottom-right Vaktplan section
-**Then** I see the current week's duty assignments
+**Then** I see the current week's duty assignments with:
+  - Vakt09: assigned person name
+  - Lederstøtte: assigned person name AND phone number
 
-**And** Key positions are listed: vakthavende brannsjef, innsatsleder brann, etc.
-**And** Assigned person name is displayed for each position
 **And** Current week is auto-detected from system date
+**And** Week navigation buttons (previous/next) are available
 **And** Display fits in allocated bottom-right layout space
 
 **Prerequisites:** Story 1.5 (layout), Story 2.1+ (auth)
 
 **Technical Notes:**
-- Create `/api/vaktplan` GET endpoint
-- Use DutyRoster table from Story 1.2 schema
-- Query by current week number and year: `WHERE weekNumber = ? AND year = ?`
-- Calculate week number using date library (date-fns or Day.js)
-- Display as simple list or table: Position | Assigned Person
+- Fixed schema: weekNumber, year, vakt09Name, lederstotteName, lederstottePhone
+- No generic "position" field - structure is predetermined
+- Create `/api/vaktplan` GET endpoint with ?week=X&year=Y params
+- Calculate week number using date-fns (getISOWeek, getYear)
+- Display as card with fixed layout for Vakt09 and Lederstøtte
 - Read-only view for operators (editing in Story 3.7)
 - Reference PRD FR4.1: Weekly Overview
 
@@ -706,36 +707,72 @@ So that I know who is assigned to key positions.
 ### Story 3.7: Vaktplan - Administrator Editing
 
 As an administrator,
-I want to update duty roster assignments for current and future weeks,
+I want to modify Vakt09 and Lederstøtte assignments for current and future weeks,
 So that the roster stays current.
 
 **Acceptance Criteria:**
 
 **Given** I am an administrator viewing vaktplan
-**When** I click "Edit Roster"
-**Then** I can modify assigned persons for each position
+**When** I click "Rediger Vaktplan"
+**Then** I can modify:
+  - Vakt09 name
+  - Lederstøtte name
+  - Lederstøtte phone number
 
 **And** I can navigate to future weeks to pre-assign duties
-**And** Changes are saved and visible to all dispatchers immediately
+**And** Changes are saved and visible to all dispatchers immediately via SSE
 **And** Only administrators can edit (operators see read-only view)
 **And** Edit actions are audit-logged
 
 **Prerequisites:** Story 3.6, Story 2.3 (RBAC)
 
 **Technical Notes:**
-- Create `/api/vaktplan` POST/PATCH endpoints
+- Single roster entry per week (not multiple position rows)
+- Create `/api/vaktplan` POST endpoint for upsert (create or update)
 - Protect with `requireRole(['ADMINISTRATOR'])`
 - Implement week navigation: Previous Week / Next Week buttons
-- Use shadcn/ui Form with Input fields for each position
-- Broadcast updates via SSE (optional - vaktplan changes less frequently than events)
-- Show edit mode only to administrators based on session role
+- Use shadcn/ui Dialog with Input fields for Vakt09 name, Lederstøtte name, Lederstøtte phone
+- Broadcast updates via SSE: vaktplan_update event
+- Show edit button only to administrators based on session role
 - Reference PRD FR4.2: Roster Updates
+
+---
+
+### Story 3.8: Talegrupper (Radio Talk Groups)
+
+As an administrator,
+I want to manage assigned radio talk groups for the current situation,
+So that dispatchers know which radio channels are active.
+
+**Acceptance Criteria:**
+
+**Given** I view the "Hva Skjer" folder
+**When** I look below the Vaktplan section
+**Then** I see a "Talegrupper" section with assigned talk groups
+
+**And** Each talegruppe displays: name (e.g., "Skogbrann-01") and details (e.g., "06-Brann-19")
+**And** Administrators can add new talegrupper
+**And** Administrators can edit existing talegrupper
+**And** Administrators can delete talegrupper
+**And** Operators see read-only view
+**And** Changes sync in real-time to all dispatchers via SSE
+**And** All CRUD actions are audit-logged
+
+**Prerequisites:** Story 3.7, Story 2.3 (RBAC)
+
+**Technical Notes:**
+- New Prisma model: Talegruppe { id, name, details, createdAt, updatedAt }
+- Not week-based - talegrupper are current situation, not schedule
+- Similar UI pattern to Pri 1 events in Viktige meldinger
+- API endpoints: GET/POST /api/talegrupper, PATCH/DELETE /api/talegrupper/[id]
+- Broadcast SSE: talegruppe_created, talegruppe_updated, talegruppe_deleted
+- Reference PRD FR4.3: Talegrupper
 
 ---
 
 ## Epic 3 Summary
 
-**Total Stories:** 7
+**Total Stories:** 8
 **Estimated Effort:** Week 2 (partial) + Week 3 of 6-week timeline
 **Key Deliverables:**
 - ✅ Event management (create, edit, delete, list)
@@ -743,10 +780,12 @@ So that the roster stays current.
 - ✅ Real-time event synchronization across dispatchers
 - ✅ Bilstatus vehicle rotation system (S111/S112)
 - ✅ Grey status with reason notes
-- ✅ Vaktplan duty roster display and editing
+- ✅ Vaktplan duty roster display (Vakt09 + Lederstøtte with fixed fields)
+- ✅ Vaktplan administrator editing
+- ✅ Talegrupper (radio talk groups) management
 - ✅ Full audit logging for all actions
 
-**Enables:** Real-time operational awareness, vehicle workload balancing, and established sync patterns for Epic 4
+**Enables:** Real-time operational awareness, vehicle workload balancing, radio coordination, and established sync patterns for Epic 4
 
 ---
 
@@ -1203,12 +1242,12 @@ So that all registrations are handled even if automation fails.
 ## Final Summary
 
 **Total Epics:** 5
-**Total Stories:** 34 stories across all epics
+**Total Stories:** 35 stories across all epics
 
 **Epic Breakdown:**
 - Epic 1: Foundation & Infrastructure - 8 stories
 - Epic 2: Authentication & Access Control - 6 stories
-- Epic 3: Event Control Dashboard - 7 stories
+- Epic 3: Event Control Dashboard - 8 stories (incl. Story 3.8 Talegrupper)
 - Epic 4: Flash Message System - 6 stories
 - Epic 5: Bålmelding (Bonfire) System - 7 stories
 
