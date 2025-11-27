@@ -1,3 +1,17 @@
+/**
+ * Bonfire Chat API Route
+ *
+ * Epic 5 Vol.2: AI-drevet bålmeldingssystem med Google Places API
+ *
+ * Funksjoner:
+ * - AI-chat for innsamling av bålmeldingsdata
+ * - Google Places API for landemerke-gjenkjenning (domkirke, kjøpesenter, etc.)
+ * - Reverse geocoding for nøyaktig kommune-identifikasjon
+ * - Azure Table Storage for lagring av bålmeldinger
+ *
+ * @see docs/sprint-artifacts/epic-5-vol-2/tech-spec.md
+ */
+
 import { createAzure } from '@ai-sdk/azure'
 import { generateText, stepCountIs, tool } from 'ai'
 import { z } from 'zod'
