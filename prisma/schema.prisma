@@ -121,17 +121,32 @@ model VehicleStatus {
 }
 
 // DutyRoster Model - Weekly personnel assignments (Epic 3)
+// Fixed structure: Vakt09 + Lederstøtte (no generic positions)
+// Updated 2025-11-27 via correct-course workflow
 model DutyRoster {
-  id         String   @id @default(uuid())
-  weekNumber Int // ISO week number
-  year       Int
-  position   String   @db.VarChar(100) // "vakthavende brannsjef", etc.
-  assignedTo String   @db.VarChar(100) // Person name
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id               String   @id @default(uuid())
+  weekNumber       Int      // ISO week number (1-53)
+  year             Int
+  vakt09Name       String?  @db.VarChar(100)  // Vakt09 assigned person
+  lederstotteName  String?  @db.VarChar(100)  // Lederstøtte assigned person
+  lederstottePhone String?  @db.VarChar(20)   // Lederstøtte phone number
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  @@unique([weekNumber, year, position])
+  @@unique([weekNumber, year])  // One entry per week
   @@index([weekNumber, year])
+}
+
+// Talegruppe Model - Radio talk group assignments (Epic 3)
+// Added 2025-11-27 via correct-course workflow
+model Talegruppe {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(50)   // e.g., "Skogbrann-01"
+  details   String   @db.VarChar(200)  // e.g., "06-Brann-19"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
 }
 
 // BonfireRegistration Model - Bonfire notifications (Epic 5)
