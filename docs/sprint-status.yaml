@@ -95,6 +95,14 @@ development_status:
   5-7-manual-review-queue-for-flagged-registrations: done  # PR #8 merged (admin godkjenning)
   epic-5-retrospective: done  # Completed 2025-11-27
 
+  # Epic 5 Vol.2: Bålmelding System Improvements
+  # Branch: #Epic-5-vol.2
+  # Focus: Bug fixes and UX improvements
+  epic-5-vol-2: in-progress
+  5-2-1-google-places-api-for-landmark-recognition: done  # Places API + reverse geocoding
+  5-2-2-ai-chat-input-auto-focus: done  # Auto-focus on open and after AI response
+  5-2-3-ai-sdk-v5-tool-refactoring: done  # tool() helper, generateText, stepCountIs
+
 # INTEGRATION TASKS (ADR-006):
 # These tasks integrate Epic 5 bonfire system with main app auth
 integration_tasks:

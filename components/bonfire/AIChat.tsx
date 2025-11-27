@@ -1,3 +1,17 @@
+/**
+ * AI Chat Component for Bonfire Registration
+ *
+ * Epic 5 Vol.2: Forbedret brukeropplevelse med auto-fokus
+ *
+ * Funksjoner:
+ * - Flytende chat-vindu som åpnes fra en knapp
+ * - Auto-fokus på input når chat åpnes
+ * - Auto-fokus etter AI har svart
+ * - Streaming av AI-responser
+ *
+ * @see docs/sprint-artifacts/epic-5-vol-2/tech-spec.md
+ */
+
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
