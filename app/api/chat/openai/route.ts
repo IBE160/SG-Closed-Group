@@ -3,11 +3,18 @@ import { AzureOpenAI } from 'openai'
 import { Client } from '@googlemaps/google-maps-services-js'
 import { createBonfireInAzure } from '@/lib/azure-table'
 
-const client = new AzureOpenAI({
-  apiKey: process.env.AZURE_OPENAI_API_KEY,
-  endpoint: process.env.AZURE_OPENAI_ENDPOINT,
-  apiVersion: process.env.AZURE_OPENAI_API_VERSION,
-})
+// Lazy initialization to avoid build-time errors
+let _client: AzureOpenAI | null = null
+function getAzureClient(): AzureOpenAI {
+  if (!_client) {
+    _client = new AzureOpenAI({
+      apiKey: process.env.AZURE_OPENAI_API_KEY,
+      endpoint: process.env.AZURE_OPENAI_ENDPOINT,
+      apiVersion: process.env.AZURE_OPENAI_API_VERSION,
+    })
+  }
+  return _client
+}
 
 const mapsClient = new Client({})
 
@@ -262,6 +269,7 @@ export async function POST(request: NextRequest) {
     ]
 
     // Kall Azure OpenAI med historikk og funksjoner
+    const client = getAzureClient()
     const result = await client.chat.completions.create({
       model: deploymentName,
       messages: messages,
