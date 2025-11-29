@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAllBonfiresFromAzure, createBonfireInAzure } from '@/lib/azure-table'
+import { requireAuth } from '@/lib/api-auth'
 import { z } from 'zod'
 
 const createBonfireSchema = z.object({
@@ -17,7 +18,13 @@ const createBonfireSchema = z.object({
   description: z.string().optional()
 })
 
+// GET - Kun for innloggede brukere (operatører/administratorer)
 export async function GET() {
+  const authResult = await requireAuth()
+  if (!authResult.authorized) {
+    return authResult.response
+  }
+
   try {
     const bonfires = await getAllBonfiresFromAzure()
 
@@ -47,6 +54,7 @@ export async function GET() {
   }
 }
 
+// POST - Offentlig (alle kan registrere bålmeldinger)
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

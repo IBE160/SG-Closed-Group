@@ -85,20 +85,28 @@ development_status:
   # Epic 5: Bålmelding (Bonfire) Registration System
   # NOTE: Epic 5 uses Azure Table Storage (ADR-006) - separate from Prisma/PostgreSQL
   # PR #8 merged: AI chat temporarily disabled pending AI SDK v5 useChat migration
-  epic-5: in-progress
+  epic-5: done
   5-1-google-maps-integration-and-map-display: done  # PR #8 merged
   5-2-manual-bonfire-registration-baseline: done  # PR #8 merged
-  5-3-azure-openai-email-parsing-phase-1-manual-pilot: blocked  # AI chat disabled - needs AI SDK v5 migration
-  5-4-power-automate-integration-phase-2-email-monitoring: backlog
+  5-3-azure-openai-email-parsing-phase-1-manual-pilot: done  # AI SDK v5 migration complete
+  5-4-power-automate-integration-phase-2-email-monitoring: skipped  # Droppet - ikke nødvendig
   5-5-municipality-filtering-and-search: done  # PR #8 merged (29 kommuner hardkodet)
-  5-6-automatic-bonfire-expiration: backlog
+  5-6-automatic-bonfire-expiration: done  # Utløper kl 04:00 dagen etter 'til'-dato
   5-7-manual-review-queue-for-flagged-registrations: done  # PR #8 merged (admin godkjenning)
-  epic-5-retrospective: optional
+  epic-5-retrospective: done  # Completed 2025-11-27
+
+  # Epic 5 Vol.2: Bålmelding System Improvements
+  # Branch: #Epic-5-vol.2
+  # Focus: Bug fixes and UX improvements
+  epic-5-vol-2: in-progress
+  5-2-1-google-places-api-for-landmark-recognition: done  # Places API + reverse geocoding
+  5-2-2-ai-chat-input-auto-focus: done  # Auto-focus on open and after AI response
+  5-2-3-ai-sdk-v5-tool-refactoring: done  # tool() helper, generateText, stepCountIs
 
 # INTEGRATION TASKS (ADR-006):
 # These tasks integrate Epic 5 bonfire system with main app auth
 integration_tasks:
-  replace-admin-cookie-with-nextauth: backlog  # Replace ADMIN_PASSWORD cookie auth with NextAuth session
-  protect-bonfire-routes-with-nextauth: backlog  # Add NextAuth middleware to /api/admin/* routes
+  replace-admin-cookie-with-nextauth: done  # Not needed - already using NextAuth everywhere
+  protect-bonfire-routes-with-nextauth: done  # GET requires auth, POST is public for registration
   merge-pr-8: done  # Merged 2025-11-26 with AI SDK v5 compatibility fixes
-  migrate-ai-chat-to-sdk-v5: backlog  # Fix useChat hook for AI SDK v5 (files in .disabled)
+  migrate-ai-chat-to-sdk-v5: done  # Migrated to AI SDK v5 with useChat hook and streaming

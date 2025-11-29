@@ -1,26 +1,37 @@
+/**
+ * AI Chat Component for Bonfire Registration
+ *
+ * Epic 5 Vol.2: Forbedret brukeropplevelse med auto-fokus
+ *
+ * Funksjoner:
+ * - Flytende chat-vindu som åpnes fra en knapp
+ * - Auto-fokus på input når chat åpnes
+ * - Auto-fokus etter AI har svart
+ * - Streaming av AI-responser
+ *
+ * @see docs/sprint-artifacts/epic-5-vol-2/tech-spec.md
+ */
+
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
 
 interface Message {
+  id: string
   role: 'user' | 'assistant'
   content: string
 }
 
 export default function AIChat() {
   const pathname = usePathname()
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      role: 'assistant',
-      content: 'Hei! Jeg er her for å hjelpe deg med spørsmål om bålmelding. Hva lurer du på?'
-    }
-  ])
-  const [input, setInput] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const [isCompleted, setIsCompleted] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
+  const [inputValue, setInputValue] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const isAdminPage = pathname?.startsWith('/admin')
 
   const scrollToBottom = () => {
@@ -31,75 +42,97 @@ export default function AIChat() {
     scrollToBottom()
   }, [messages])
 
+  // Auto-fokus på input når chatten åpnes
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [isOpen])
+
+  // Auto-fokus på input etter at AI har svart
+  useEffect(() => {
+    if (!isLoading && isOpen && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [isLoading, isOpen])
+
   // Ikke vis AIChat på admin-sider
   if (isAdminPage) {
     return null
   }
 
-  const sendMessage = async () => {
-    if (!input.trim() || isLoading) return
+  // Sjekk om bålmelding er lagret
+  const lastMessage = messages[messages.length - 1]
+  const isCompleted = lastMessage?.role === 'assistant' &&
+    lastMessage.content.includes('Referansenummer:')
 
-    const userMessage: Message = { role: 'user', content: input }
-    const currentInput = input
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!inputValue.trim() || isLoading) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: inputValue.trim()
+    }
+
     setMessages(prev => [...prev, userMessage])
-    setInput('')
+    setInputValue('')
     setIsLoading(true)
+    setError(null)
 
     try {
-      // Bygg samtalehistorikk (ekskluder første velkomstmelding)
-      const conversationHistory = messages
-        .slice(1) // Hopp over første velkomstmelding
-        .map(msg => ({
-          role: msg.role,
-          content: msg.content
-        }))
-
-      const response = await fetch('/api/chat/openai', {
+      const response = await fetch('/api/chat/bonfire', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message: currentInput,
-          conversationHistory: conversationHistory
-        }),
+          messages: [...messages, userMessage].map(m => ({
+            role: m.role,
+            content: m.content
+          }))
+        })
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.response
-        }
-        setMessages(prev => [...prev, assistantMessage])
-
-        // Hvis bålmelding ble lagret, sett completed flag
-        if (data.saved) {
-          setIsCompleted(true)
-        }
-      } else {
-        const errorMessage: Message = {
-          role: 'assistant',
-          content: `Feil: ${data.error || 'Kunne ikke få svar fra AI'}`
-        }
-        setMessages(prev => [...prev, errorMessage])
+      if (!response.ok) {
+        throw new Error('Feil ved kommunikasjon med serveren')
       }
-    } catch {
-      const errorMessage: Message = {
+
+      // Les streaming response
+      const reader = response.body?.getReader()
+      const decoder = new TextDecoder()
+      let assistantContent = ''
+
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Beklager, noe gikk galt. Prøv igjen senere.'
+        content: ''
       }
-      setMessages(prev => [...prev, errorMessage])
+      setMessages(prev => [...prev, assistantMessage])
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          const chunk = decoder.decode(value, { stream: true })
+          assistantContent += chunk
+
+          // Oppdater melding med ny tekst
+          setMessages(prev => {
+            const updated = [...prev]
+            const lastIdx = updated.length - 1
+            if (updated[lastIdx]?.role === 'assistant') {
+              updated[lastIdx] = { ...updated[lastIdx], content: assistantContent }
+            }
+            return updated
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Chat error:', err)
+      setError('Beklager, noe gikk galt. Prøv igjen.')
     } finally {
       setIsLoading(false)
-    }
-  }
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      sendMessage()
     }
   }
 
@@ -108,8 +141,8 @@ export default function AIChat() {
       {/* Floating Chat Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 py-3 shadow-lg z-50 transition-all flex items-center gap-2 font-semibold"
-        aria-label="Åpne AI chat"
+        className="fixed bottom-6 right-6 bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 py-3 shadow-lg z-50 transition-all flex items-center gap-2 font-semibold"
+        aria-label="Åpne bålmelding chat"
       >
         {isOpen ? (
           <>
@@ -120,49 +153,76 @@ export default function AIChat() {
           </>
         ) : (
           <>
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-            </svg>
-            <span>Spør meg om hjelp</span>
+            <span className="text-xl">🔥</span>
+            <span>Meld inn bål</span>
           </>
         )}
       </button>
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 w-96 h-[600px] bg-white rounded-lg shadow-2xl z-50 flex flex-col border border-gray-200">
+        <div className="fixed bottom-24 right-6 w-96 h-[550px] bg-white rounded-lg shadow-2xl z-50 flex flex-col border border-gray-200">
           {/* Header */}
-          <div className="bg-blue-600 text-white p-4 rounded-t-lg">
-            <h3 className="font-semibold text-lg">AI Assistent - Bålmelding</h3>
-            <p className="text-sm text-blue-100">Spør meg om hva som helst!</p>
+          <div className="bg-gradient-to-r from-orange-500 to-red-500 text-white p-4 rounded-t-lg">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">🔥</span>
+              <div>
+                <h3 className="font-semibold text-lg">Bålmelding</h3>
+                <p className="text-sm text-orange-100">110 Sør-Vest</p>
+              </div>
+            </div>
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((msg, index) => (
+          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+            {/* Velkomstmelding - vises alltid først */}
+            <div className="flex justify-start">
+              <div className="max-w-[85%] p-3 rounded-lg bg-white text-gray-800 rounded-bl-none shadow-sm border border-gray-100">
+                <p className="text-sm">
+                  Hei! 👋 Velkommen til bålmeldingstjenesten for 110 Sør-Vest.
+                </p>
+                <p className="text-sm mt-2">
+                  Jeg hjelper deg med å registrere bålbrenning slik at brannvesenet vet om det. Det tar bare et par minutter!
+                </p>
+                <p className="text-sm mt-2 font-medium">
+                  La oss starte - hva heter du?
+                </p>
+              </div>
+            </div>
+
+            {messages.map((msg) => (
               <div
-                key={index}
+                key={msg.id}
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[80%] p-3 rounded-lg ${
+                  className={`max-w-[85%] p-3 rounded-lg shadow-sm ${
                     msg.role === 'user'
-                      ? 'bg-blue-600 text-white rounded-br-none'
-                      : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                      ? 'bg-orange-500 text-white rounded-br-none'
+                      : 'bg-white text-gray-800 rounded-bl-none border border-gray-100'
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             ))}
-            {isLoading && (
+
+            {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-800 p-3 rounded-lg rounded-bl-none">
+                <div className="bg-white text-gray-800 p-3 rounded-lg rounded-bl-none shadow-sm border border-gray-100">
                   <div className="flex space-x-2">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                    <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div className="w-2 h-2 bg-orange-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
                   </div>
+                </div>
+              </div>
+            )}
+
+            {error && (
+              <div className="flex justify-start">
+                <div className="bg-red-50 text-red-700 p-3 rounded-lg border border-red-200">
+                  <p className="text-sm">{error}</p>
                 </div>
               </div>
             )}
@@ -170,30 +230,33 @@ export default function AIChat() {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-200">
-            {isCompleted && (
-              <div className="mb-3 p-3 bg-green-50 border border-green-200 rounded-lg text-center">
-                <p className="text-sm font-semibold text-green-800">✅ Da er skjema sendt, takk for at du melder ifra!</p>
-                <p className="text-xs text-green-600 mt-1">Refresh siden for å starte en ny melding</p>
+          <div className="p-4 border-t border-gray-200 bg-white rounded-b-lg">
+            {isCompleted ? (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-center">
+                <p className="text-sm font-semibold text-green-800">✅ Bålmeldingen er registrert!</p>
+                <p className="text-xs text-green-600 mt-1">Takk for at du melder fra. God bålbrenning!</p>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex space-x-2">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  placeholder="Skriv her..."
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-800 bg-white"
+                  disabled={isLoading}
+                  autoComplete="off"
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !inputValue.trim()}
+                  className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                >
+                  Send
+                </button>
+              </form>
             )}
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="Skriv din melding..."
-                className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 text-gray-800"
-              />
-              <button
-                onClick={sendMessage}
-                disabled={isLoading || !input.trim()}
-                className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white px-4 py-2 rounded-lg transition-colors"
-              >
-                Send
-              </button>
-            </div>
           </div>
         </div>
       )}

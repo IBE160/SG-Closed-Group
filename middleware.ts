@@ -6,12 +6,17 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   // Public routes - no auth required
-  const publicRoutes = ["/login", "/access-denied"];
+  const publicRoutes = ["/login", "/access-denied", "/rapporter"];
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     // If logged in and trying to access login, redirect to app
     if (isLoggedIn && pathname === "/login") {
       return NextResponse.redirect(new URL("/hva-skjer", req.url));
     }
+    return NextResponse.next();
+  }
+
+  // Public API routes (bonfires and chat are public for registration)
+  if (pathname === "/api/bonfires" || pathname === "/api/chat/bonfire") {
     return NextResponse.next();
   }
 

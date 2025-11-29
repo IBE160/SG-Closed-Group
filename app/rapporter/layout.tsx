@@ -10,6 +10,6 @@ export default function RapporterLayout({
 }: {
   children: React.ReactNode;
 }) {
-  // Returnerer children direkte uten AppLayout wrapper
+  // Returnerer children direkte - ingen wrapper som kan blokkere events
   return <>{children}</>;
 }

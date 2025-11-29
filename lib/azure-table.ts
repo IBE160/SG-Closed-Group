@@ -45,12 +45,47 @@ export interface BonfireEntity {
   godkjent: boolean;
 }
 
+/**
+ * Beregner utløpstidspunkt for bålmelding.
+ * Regel: Utløper kl 04:00 dagen etter 'til'-datoen.
+ * Hvis ingen 'til'-dato: 3 dager fra opprettelse, kl 04:00.
+ */
+function calculateExpiryDate(tilDate: string | null | undefined): Date {
+  let expiryDate: Date;
+
+  if (tilDate) {
+    // Parse 'til'-datoen og sett utløp til kl 04:00 dagen etter
+    const til = new Date(tilDate);
+    expiryDate = new Date(til);
+    expiryDate.setDate(expiryDate.getDate() + 1); // Dagen etter
+  } else {
+    // Ingen 'til'-dato: 3 dager fra nå
+    expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 3);
+  }
+
+  // Sett klokkeslett til 04:00 norsk tid
+  expiryDate.setHours(4, 0, 0, 0);
+
+  return expiryDate;
+}
+
+/**
+ * Sjekker om en bålmelding er utløpt.
+ * Sammenligner nåværende tid mot expiryDate.
+ */
+export function isBonfireExpired(entity: BonfireEntity): boolean {
+  const now = new Date();
+  const expiryDate = new Date(entity.expiryDate);
+  return now > expiryDate;
+}
+
 export async function createBonfireInAzure(data: Omit<BonfireEntity, 'partitionKey' | 'rowKey' | 'timestamp' | 'expiryDate' | 'status' | 'godkjent'>): Promise<string> {
   const client = getTableClient();
 
   const rowKey = `${Date.now()}-${Math.random().toString(36).substring(7)}`;
   const now = new Date();
-  const expiryDate = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 dager
+  const expiryDate = calculateExpiryDate(data.til);
 
   const entity: BonfireEntity = {
     partitionKey: 'innmeldinger',
@@ -78,7 +113,7 @@ export async function getBonfireFromAzure(rowKey: string): Promise<BonfireEntity
   }
 }
 
-export async function getAllBonfiresFromAzure(): Promise<BonfireEntity[]> {
+export async function getAllBonfiresFromAzure(includeExpired = false): Promise<BonfireEntity[]> {
   const client = getTableClient();
   const entities: BonfireEntity[] = [];
 
@@ -87,7 +122,10 @@ export async function getAllBonfiresFromAzure(): Promise<BonfireEntity[]> {
   });
 
   for await (const entity of entitiesIter) {
-    entities.push(entity);
+    // Filtrer ut utløpte meldinger med mindre includeExpired er true
+    if (includeExpired || !isBonfireExpired(entity)) {
+      entities.push(entity);
+    }
   }
 
   return entities;
@@ -121,7 +159,10 @@ export async function getPendingBonfires(): Promise<BonfireEntity[]> {
   });
 
   for await (const entity of entitiesIter) {
-    entities.push(entity);
+    // Filtrer ut utløpte
+    if (!isBonfireExpired(entity)) {
+      entities.push(entity);
+    }
   }
 
   return entities;
@@ -136,7 +177,10 @@ export async function getApprovedBonfires(): Promise<BonfireEntity[]> {
   });
 
   for await (const entity of entitiesIter) {
-    entities.push(entity);
+    // Filtrer ut utløpte
+    if (!isBonfireExpired(entity)) {
+      entities.push(entity);
+    }
   }
 
   return entities;
