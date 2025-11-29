@@ -37,13 +37,10 @@ const createPrismaClient = () => {
   // Create extended Prisma client with audit logging
   const extendedClient = createAuditedPrismaClient(basePrisma, auditClient);
 
-  console.info('[PRISMA]', 'Audit extension enabled', {
-    timestamp: new Date().toISOString(),
-  });
-
   return extendedClient;
 };
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Cache Prisma client globally to reuse connections in serverless
+globalForPrisma.prisma = prisma;
