@@ -19,10 +19,7 @@ import { ChevronLeft, ChevronRight, Send, PenLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useFlashStore,
-  useCurrentMessage,
   useUnreadCount,
-  useMessagePosition,
-  useCurrentIsAcknowledged,
   useBlinkPhase,
 } from "@/stores/useFlashStore";
 
@@ -34,14 +31,21 @@ export function FlashBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
-  // Zustand store
+  // Zustand store - use direct subscriptions to ensure reactivity
   const { addMessage, acknowledge, nextMessage, prevMessage, setMessages, transitionToContinu, setBlinkPhase } =
     useFlashStore();
-  const currentMessage = useCurrentMessage();
+
+  // Subscribe to individual state slices for proper reactivity
+  const messages = useFlashStore((state) => state.messages);
+  const currentIndex = useFlashStore((state) => state.currentIndex);
+  const acknowledgedIds = useFlashStore((state) => state.acknowledgedIds);
   const unreadCount = useUnreadCount();
-  const messagePosition = useMessagePosition();
-  const isCurrentAcknowledged = useCurrentIsAcknowledged();
   const blinkPhase = useBlinkPhase();
+
+  // Compute derived values
+  const currentMessage = messages.length > 0 ? messages[currentIndex] : null;
+  const messagePosition = messages.length > 0 ? `${currentIndex + 1}/${messages.length}` : null;
+  const isCurrentAcknowledged = currentMessage ? acknowledgedIds.includes(currentMessage.id) : true;
 
   /**
    * Fetch messages from API
