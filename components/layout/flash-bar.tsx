@@ -44,25 +44,45 @@ export function FlashBar() {
   const blinkPhase = useBlinkPhase();
 
   /**
-   * Fetch initial messages on mount
+   * Fetch messages from API
    */
-  useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        const response = await fetch("/api/flash?limit=10");
-        if (response.ok) {
-          const result = await response.json();
-          if (result.success && result.data) {
+  const fetchMessages = useCallback(async () => {
+    try {
+      const response = await fetch("/api/flash?limit=20");
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.data) {
+          // Check for new messages (compare with current)
+          const currentIds = useFlashStore.getState().messages.map(m => m.id);
+          const newMessages = result.data.filter((m: { id: string }) => !currentIds.includes(m.id));
+
+          // Add new messages (will trigger blink)
+          newMessages.forEach((msg: { id: string; content: string; createdAt: string }) => {
+            addMessage(msg);
+          });
+
+          // On initial load, set all messages
+          if (currentIds.length === 0 && result.data.length > 0) {
             setMessages(result.data);
           }
         }
-      } catch (error) {
-        console.error("[FlashBar] Failed to fetch messages:", error);
       }
-    };
+    } catch (error) {
+      console.error("[FlashBar] Failed to fetch messages:", error);
+    }
+  }, [addMessage, setMessages]);
 
+  /**
+   * Fetch initial messages on mount and poll every 3 seconds for updates
+   */
+  useEffect(() => {
     fetchMessages();
-  }, [setMessages]);
+
+    // Poll for new messages every 3 seconds (fallback for SSE)
+    const pollInterval = setInterval(fetchMessages, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [fetchMessages]);
 
   /**
    * Send a new flash message
@@ -207,19 +227,32 @@ export function FlashBar() {
       onClick={handleBarClick}
       onAnimationEnd={handleAnimationEnd}
     >
-      {/* Previous button */}
+      {/* Navigation arrows - side by side */}
       {hasMessages && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            prevMessage();
-          }}
-          className="p-1 rounded hover:bg-destructive/20 transition-colors"
-          title="Forrige melding"
-          aria-label="Forrige melding"
-        >
-          <ChevronLeft className="h-5 w-5 text-destructive" />
-        </button>
+        <div className="flex items-center">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              prevMessage();
+            }}
+            className="p-1 rounded hover:bg-destructive/20 transition-colors"
+            title="Forrige melding"
+            aria-label="Forrige melding"
+          >
+            <ChevronLeft className="h-5 w-5 text-destructive" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              nextMessage();
+            }}
+            className="p-1 rounded hover:bg-destructive/20 transition-colors"
+            title="Neste melding"
+            aria-label="Neste melding"
+          >
+            <ChevronRight className="h-5 w-5 text-destructive" />
+          </button>
+        </div>
       )}
 
       {/* Message display or input */}
@@ -320,21 +353,6 @@ export function FlashBar() {
             </span>
           )}
         </div>
-      )}
-
-      {/* Next button */}
-      {hasMessages && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            nextMessage();
-          }}
-          className="p-1 rounded hover:bg-destructive/20 transition-colors"
-          title="Neste melding"
-          aria-label="Neste melding"
-        >
-          <ChevronRight className="h-5 w-5 text-destructive" />
-        </button>
       )}
     </div>
   );

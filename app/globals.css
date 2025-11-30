@@ -98,53 +98,58 @@
   }
 
   /* Flash message blinking animations - Story 4.2 */
+  /* INTENSE version - very noticeable for urgent messages */
 
-  /* Quick blink: 3 rapid blinks when new message arrives */
+  /* Quick blink: 3 rapid blinks when new message arrives - HIGH INTENSITY */
   @keyframes flash-quick {
     0%, 100% {
-      background-color: hsl(var(--destructive) / 0.1);
+      background-color: hsl(var(--destructive) / 0.2);
+      box-shadow: inset 0 0 0 2px hsl(var(--destructive) / 0.5);
     }
     50% {
       background-color: hsl(var(--destructive));
       color: hsl(var(--destructive-foreground));
+      box-shadow: inset 0 0 20px hsl(var(--destructive)), 0 0 10px hsl(var(--destructive) / 0.5);
     }
   }
 
-  /* Continuous blink: slower pulsing after quick blinks complete */
+  /* Continuous blink: pulsing after quick blinks - keeps attention */
   @keyframes flash-continuous {
     0%, 100% {
       background-color: hsl(var(--destructive));
       color: hsl(var(--destructive-foreground));
       border-color: hsl(var(--destructive));
+      box-shadow: 0 0 15px hsl(var(--destructive) / 0.6);
     }
     50% {
-      background-color: hsl(var(--destructive) / 0.2);
+      background-color: hsl(var(--destructive) / 0.3);
       color: hsl(var(--foreground));
-      border-color: hsl(var(--destructive) / 0.5);
+      border-color: hsl(var(--destructive));
+      box-shadow: 0 0 5px hsl(var(--destructive) / 0.3);
     }
   }
 
-  /* 3 quick blinks (0.4s each = 1.2s total) */
+  /* 3 quick blinks (0.3s each = 0.9s total) - faster for urgency */
   .animate-flash-quick {
-    animation: flash-quick 0.4s ease-in-out 3;
+    animation: flash-quick 0.3s ease-in-out 3;
   }
 
-  /* Continuous slower blink (2s cycle, infinite) */
+  /* Continuous blink (1.5s cycle, infinite) - faster than before */
   .animate-flash-continuous {
-    animation: flash-continuous 2s ease-in-out infinite;
+    animation: flash-continuous 1.5s ease-in-out infinite;
   }
 
-  /* Full-screen flash overlay - grabs attention */
+  /* Full-screen flash overlay - VERY attention grabbing */
   @keyframes flash-screen-overlay {
     0%, 100% {
       background-color: transparent;
     }
     50% {
-      background-color: hsl(var(--destructive) / 0.3);
+      background-color: hsl(var(--destructive) / 0.5);
     }
   }
 
-  /* Double duration for screen overlay (0.8s x 3 = 2.4s total) */
+  /* Screen overlay (0.8s x 3 = 2.4s total) - high opacity */
   .animate-flash-screen {
     animation: flash-screen-overlay 0.8s ease-in-out 3;
   }
