@@ -14,7 +14,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    // Use server-side API key (no referrer restrictions) or fall back to public key
+    const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
     if (!apiKey) {
       return NextResponse.json(
         { error: 'Google Maps API key mangler' },
