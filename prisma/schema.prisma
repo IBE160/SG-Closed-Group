@@ -126,17 +126,17 @@ model VehicleStatus {
 // Updated 2025-11-27 via correct-course workflow
 model DutyRoster {
   id               String   @id @default(uuid())
-  weekNumber       Int      // ISO week number (1-53)
+  weekNumber       Int // ISO week number (1-53)
   year             Int
-  vakt09Name       String?  @db.VarChar(100)  // Vakt09 assigned person
-  lederstotteName  String?  @db.VarChar(100)  // Lederstøtte assigned person
-  lederstottePhone String?  @db.VarChar(20)   // Lederstøtte phone number
-  updatedBy        String?  @db.VarChar(100)  // Who last updated
-  updatedByName    String?  @db.VarChar(100)  // Display name of updater
+  vakt09Name       String?  @db.VarChar(100) // Vakt09 assigned person
+  lederstotteName  String?  @db.VarChar(100) // Lederstøtte assigned person
+  lederstottePhone String?  @db.VarChar(20) // Lederstøtte phone number
+  updatedBy        String?  @db.VarChar(100) // Who last updated
+  updatedByName    String?  @db.VarChar(100) // Display name of updater
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  @@unique([weekNumber, year])  // One entry per week
+  @@unique([weekNumber, year]) // One entry per week
   @@index([weekNumber, year])
 }
 
@@ -144,12 +144,12 @@ model DutyRoster {
 // Added 2025-11-27 via correct-course workflow
 model Talegruppe {
   id            String   @id @default(uuid())
-  name          String   @db.VarChar(50)   // e.g., "Skogbrann-01"
-  details       String   @db.VarChar(200)  // e.g., "06-Brann-19"
-  createdBy     String?  @db.VarChar(100)  // User ID who created
-  createdByName String?  @db.VarChar(100)  // Display name of creator
-  updatedBy     String?  @db.VarChar(100)  // User ID who last updated
-  updatedByName String?  @db.VarChar(100)  // Display name of last updater
+  name          String   @db.VarChar(50) // e.g., "Skogbrann-01"
+  details       String   @db.VarChar(200) // e.g., "06-Brann-19"
+  createdBy     String?  @db.VarChar(100) // User ID who created
+  createdByName String?  @db.VarChar(100) // Display name of creator
+  updatedBy     String?  @db.VarChar(100) // User ID who last updated
+  updatedByName String?  @db.VarChar(100) // Display name of last updater
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
