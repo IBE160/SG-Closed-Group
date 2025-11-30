@@ -15,7 +15,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Send, PenLine, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, PenLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useFlashStore,
@@ -168,16 +168,6 @@ export function FlashBar() {
   };
 
   /**
-   * Exit input mode and return to message view
-   */
-  const handleCloseInput = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setInputMode(false);
-    setInputValue("");
-    setPlaceholderText("");
-  };
-
-  /**
    * Focus input when entering input mode
    */
   useEffect(() => {
@@ -185,6 +175,19 @@ export function FlashBar() {
       inputRef.current?.focus();
     }
   }, [inputMode]);
+
+  /**
+   * Auto-exit input mode when new unacknowledged message arrives
+   * Flash messages must ALWAYS be receivable and acknowledgeable
+   */
+  useEffect(() => {
+    if (blinkPhase === "quick" && inputMode) {
+      // New message arrived while in input mode - exit to show the message
+      setInputMode(false);
+      setPlaceholderText("");
+      // Keep any typed text for later
+    }
+  }, [blinkPhase, inputMode]);
 
   /**
    * Handle animation end - transition from quick to continuous (Story 4.2)
@@ -314,17 +317,6 @@ export function FlashBar() {
                 aria-label="Send flash-melding"
               >
                 <Send className="h-5 w-5" />
-              </button>
-            )}
-            {/* Close button to return to message view (only when in input mode with messages) */}
-            {inputMode && hasMessages && (
-              <button
-                onClick={handleCloseInput}
-                className="ml-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/20 transition-colors"
-                title="Tilbake til meldinger"
-                aria-label="Lukk input"
-              >
-                <X className="h-5 w-5" />
               </button>
             )}
           </div>
