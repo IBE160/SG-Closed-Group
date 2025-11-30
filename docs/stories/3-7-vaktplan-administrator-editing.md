@@ -1,6 +1,6 @@
 # Story 3.7: Vaktplan - Administrator Editing
 
-Status: in-progress
+Status: done
 
 ## Story
 

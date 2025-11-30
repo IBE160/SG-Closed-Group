@@ -1,6 +1,6 @@
 # Story 3.8: Talegrupper (Radio Talk Groups)
 
-Status: drafted
+Status: done
 
 ## Story
 

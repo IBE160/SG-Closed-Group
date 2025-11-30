@@ -24,6 +24,8 @@ interface VaktplanData {
   vakt09Name: string | null;
   lederstotteName: string | null;
   lederstottePhone: string | null;
+  updatedByName: string | null;
+  updatedAt: string | null;
 }
 
 interface SSEEvent {
@@ -34,6 +36,8 @@ interface SSEEvent {
     vakt09Name: string | null;
     lederstotteName: string | null;
     lederstottePhone: string | null;
+    updatedByName: string | null;
+    updatedAt: string | null;
   };
   timestamp: string;
 }
@@ -45,12 +49,13 @@ interface SSEEvent {
  * - Lederstøtte: name + phone
  *
  * Story 3.6: Vaktplan - Duty Roster Display
- * Story 3.7: Vaktplan - Administrator Editing
+ * Story 3.7: Vaktplan - User Editing (all users)
  *
  * UPDATED 2025-11-27: Changed from generic positions to fixed fields
+ * UPDATED 2025-11-30: All logged-in users can edit (not just admin)
  */
 export function VaktplanSection() {
-  const { data: session } = useSession();
+  useSession(); // Keep session for auth check
   const [vaktplan, setVaktplan] = useState<VaktplanData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,7 +76,7 @@ export function VaktplanSection() {
   // SSE connection ref
   const eventSourceRef = useRef<EventSource | null>(null);
 
-  const isAdmin = session?.user?.role === "ADMINISTRATOR";
+  // All logged-in users can edit (not admin-only anymore)
 
   // Fetch vaktplan from API
   const fetchVaktplan = useCallback(async () => {
@@ -117,6 +122,8 @@ export function VaktplanSection() {
               vakt09Name: sseEvent.data.vakt09Name,
               lederstotteName: sseEvent.data.lederstotteName,
               lederstottePhone: sseEvent.data.lederstottePhone,
+              updatedByName: sseEvent.data.updatedByName,
+              updatedAt: sseEvent.data.updatedAt,
             }));
           }
         }
@@ -275,17 +282,15 @@ export function VaktplanSection() {
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              {isAdmin && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 ml-1"
-                  onClick={openEditDialog}
-                  title="Rediger vaktplan"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 ml-1"
+                onClick={openEditDialog}
+                title="Rediger vaktplan"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -293,14 +298,12 @@ export function VaktplanSection() {
           {!hasData ? (
             <div className="text-center text-muted-foreground text-sm">
               Ingen vaktplan registrert for denne uken
-              {isAdmin && (
-                <div className="mt-2">
-                  <Button variant="outline" size="sm" onClick={openEditDialog}>
-                    <Pencil className="h-4 w-4 mr-1" />
-                    Legg til
-                  </Button>
-                </div>
-              )}
+              <div className="mt-2">
+                <Button variant="outline" size="sm" onClick={openEditDialog}>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Legg til
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -329,6 +332,16 @@ export function VaktplanSection() {
                   </div>
                 )}
               </div>
+
+              {/* Updated by info */}
+              {vaktplan?.updatedByName && (
+                <div className="border-t pt-2 mt-3 text-xs text-muted-foreground">
+                  Sist oppdatert av {vaktplan.updatedByName}
+                  {vaktplan.updatedAt && (
+                    <span> - {new Date(vaktplan.updatedAt).toLocaleString("nb-NO")}</span>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>

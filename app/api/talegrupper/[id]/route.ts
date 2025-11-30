@@ -2,8 +2,10 @@
  * Talegrupper API - Individual Entry Management
  * Story 3.8: Talegrupper (Radio Talk Groups)
  *
- * PATCH /api/talegrupper/[id] - Update talegruppe (admin only)
- * DELETE /api/talegrupper/[id] - Delete talegruppe (admin only)
+ * UPDATED 2025-11-30: All users can edit/delete (not just admin)
+ *
+ * PATCH /api/talegrupper/[id] - Update talegruppe (all logged-in users)
+ * DELETE /api/talegrupper/[id] - Delete talegruppe (all logged-in users)
  */
 
 import { NextResponse } from "next/server";
@@ -21,7 +23,7 @@ const updateTalegruppeSchema = z.object({
 
 /**
  * PATCH /api/talegrupper/[id]
- * Update an existing talegruppe (admin only)
+ * Update an existing talegruppe (all logged-in users)
  */
 export async function PATCH(
   request: Request,
@@ -36,13 +38,7 @@ export async function PATCH(
       );
     }
 
-    // Check administrator role
-    if (session.user.role !== "ADMINISTRATOR") {
-      return NextResponse.json(
-        { success: false, error: { message: "Kun administratorer kan redigere talegrupper", code: "FORBIDDEN" } },
-        { status: 403 }
-      );
-    }
+    // All logged-in users can edit talegrupper (not admin-only)
 
     const { id } = await params;
 
@@ -61,13 +57,20 @@ export async function PATCH(
     const body = await request.json();
     const validated = updateTalegruppeSchema.parse(body);
 
+    // Get user display name
+    const userName = session.user.name ?? session.user.email ?? "Ukjent";
+
     // Update talegruppe with audit context
     const updatedTalegruppe = await runWithAuditContext(
       { id: session.user.id, email: session.user.email ?? "unknown" },
       async () => {
         return await prisma.talegruppe.update({
           where: { id },
-          data: validated,
+          data: {
+            ...validated,
+            updatedBy: session.user.id,
+            updatedByName: userName,
+          },
         });
       }
     );
@@ -79,6 +82,7 @@ export async function PATCH(
       id,
       name: updatedTalegruppe.name,
       updatedBy: session.user.id,
+      updatedByName: userName,
       timestamp: new Date().toISOString(),
     });
 
@@ -104,7 +108,7 @@ export async function PATCH(
 
 /**
  * DELETE /api/talegrupper/[id]
- * Delete an existing talegruppe (admin only)
+ * Delete an existing talegruppe (all logged-in users)
  */
 export async function DELETE(
   request: Request,
@@ -119,13 +123,7 @@ export async function DELETE(
       );
     }
 
-    // Check administrator role
-    if (session.user.role !== "ADMINISTRATOR") {
-      return NextResponse.json(
-        { success: false, error: { message: "Kun administratorer kan slette talegrupper", code: "FORBIDDEN" } },
-        { status: 403 }
-      );
-    }
+    // All logged-in users can delete talegrupper (not admin-only)
 
     const { id } = await params;
 
@@ -141,6 +139,9 @@ export async function DELETE(
       );
     }
 
+    // Get user display name for logging
+    const userName = session.user.name ?? session.user.email ?? "Ukjent";
+
     // Delete talegruppe with audit context
     await runWithAuditContext(
       { id: session.user.id, email: session.user.email ?? "unknown" },
@@ -151,13 +152,14 @@ export async function DELETE(
       }
     );
 
-    // Broadcast SSE update
-    broadcastSSE("talegruppe_deleted", { id });
+    // Broadcast SSE update with who deleted
+    broadcastSSE("talegruppe_deleted", { id, deletedByName: userName });
 
     console.info("[TALEGRUPPER]", "Talegruppe deleted", {
       id,
       name: existingTalegruppe.name,
       deletedBy: session.user.id,
+      deletedByName: userName,
       timestamp: new Date().toISOString(),
     });
 
