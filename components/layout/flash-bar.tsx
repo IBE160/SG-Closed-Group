@@ -15,7 +15,7 @@
  */
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ChevronLeft, ChevronRight, Send } from "lucide-react";
+import { ChevronLeft, ChevronRight, Send, PenLine, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useFlashStore,
@@ -29,6 +29,7 @@ import {
 export function FlashBar() {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
+  const [inputMode, setInputMode] = useState(false); // Toggle between message view and input
   const inputRef = useRef<HTMLInputElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +88,7 @@ export function FlashBar() {
             createdAt: result.data.createdAt,
           });
           setInputValue("");
+          setInputMode(false); // Return to message view after sending
         }
       } else {
         const error = await response.json();
@@ -122,10 +124,36 @@ export function FlashBar() {
    * Focus input when clicking empty bar
    */
   const handleBarClick = () => {
-    if (!currentMessage) {
+    if (!currentMessage || inputMode) {
       inputRef.current?.focus();
     }
   };
+
+  /**
+   * Enter input mode to compose a new message
+   */
+  const handleComposeClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInputMode(true);
+  };
+
+  /**
+   * Exit input mode and return to message view
+   */
+  const handleCloseInput = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setInputMode(false);
+    setInputValue("");
+  };
+
+  /**
+   * Focus input when entering input mode
+   */
+  useEffect(() => {
+    if (inputMode) {
+      inputRef.current?.focus();
+    }
+  }, [inputMode]);
 
   /**
    * Handle animation end - transition from quick to continuous (Story 4.2)
@@ -148,7 +176,8 @@ export function FlashBar() {
   };
 
   // Determine if we're showing a message or the input
-  const showMessage = currentMessage !== null;
+  // Show input if: no messages, OR inputMode is true
+  const showMessage = currentMessage !== null && !inputMode;
   const hasMessages = messagePosition !== null;
 
   return (
@@ -232,9 +261,32 @@ export function FlashBar() {
                 <Send className="h-5 w-5" />
               </button>
             )}
+            {/* Close button to return to message view (only when in input mode with messages) */}
+            {inputMode && hasMessages && (
+              <button
+                onClick={handleCloseInput}
+                className="ml-2 rounded p-1.5 text-muted-foreground hover:bg-destructive/20 transition-colors"
+                title="Tilbake til meldinger"
+                aria-label="Lukk input"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      {/* Compose button - show when viewing messages */}
+      {showMessage && (
+        <button
+          onClick={handleComposeClick}
+          className="p-1 rounded hover:bg-destructive/20 transition-colors"
+          title="Skriv ny melding"
+          aria-label="Ny melding"
+        >
+          <PenLine className="h-5 w-5 text-destructive" />
+        </button>
+      )}
 
       {/* Position indicator and unread badge */}
       {hasMessages && (

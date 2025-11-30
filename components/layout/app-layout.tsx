@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { FlashBar } from "./flash-bar";
 import { TabNavigation } from "./tab-navigation";
+import { useBlinkPhase } from "@/stores/useFlashStore";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -14,6 +15,7 @@ const PUBLIC_ROUTES = ["/rapporter", "/kart", "/admin"];
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();
+  const blinkPhase = useBlinkPhase();
 
   /**
    * Global keyboard shortcut: Ctrl+Shift+F to focus flash input
@@ -44,7 +46,15 @@ export function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background text-foreground">
+    <div className="flex min-h-screen flex-col bg-background text-foreground relative">
+      {/* Full-screen blink overlay during quick blink phase - Story 4.2 */}
+      {blinkPhase === "quick" && (
+        <div
+          className="fixed inset-0 pointer-events-none z-50 animate-flash-screen"
+          aria-hidden="true"
+        />
+      )}
+
       {/* Flash message bar - always visible at very top */}
       <FlashBar />
 
