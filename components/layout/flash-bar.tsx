@@ -56,19 +56,21 @@ export function FlashBar() {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
-          // Check for new messages (compare with current)
           const currentIds = useFlashStore.getState().messages.map(m => m.id);
+
+          // On initial load, set all messages WITHOUT triggering blink
+          if (currentIds.length === 0 && result.data.length > 0) {
+            setMessages(result.data);
+            return; // Don't process as new messages
+          }
+
+          // Check for genuinely new messages (not initial load)
           const newMessages = result.data.filter((m: { id: string }) => !currentIds.includes(m.id));
 
           // Add new messages (will trigger blink)
           newMessages.forEach((msg: { id: string; content: string; createdAt: string }) => {
             addMessage(msg);
           });
-
-          // On initial load, set all messages
-          if (currentIds.length === 0 && result.data.length > 0) {
-            setMessages(result.data);
-          }
         }
       }
     } catch (error) {
@@ -240,6 +242,11 @@ export function FlashBar() {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              // Exit input mode when navigating to show the message
+              if (inputMode) {
+                setInputMode(false);
+                setPlaceholderText("");
+              }
               prevMessage();
             }}
             className="p-1 rounded hover:bg-destructive/20 transition-colors"
@@ -251,6 +258,11 @@ export function FlashBar() {
           <button
             onClick={(e) => {
               e.stopPropagation();
+              // Exit input mode when navigating to show the message
+              if (inputMode) {
+                setInputMode(false);
+                setPlaceholderText("");
+              }
               nextMessage();
             }}
             className="p-1 rounded hover:bg-destructive/20 transition-colors"
