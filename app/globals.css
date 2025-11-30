@@ -144,8 +144,9 @@
     }
   }
 
+  /* Double duration for screen overlay (0.8s x 3 = 2.4s total) */
   .animate-flash-screen {
-    animation: flash-screen-overlay 0.4s ease-in-out 3;
+    animation: flash-screen-overlay 0.8s ease-in-out 3;
   }
 
   /* Legacy animations (kept for backwards compatibility) */

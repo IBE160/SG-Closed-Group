@@ -30,11 +30,12 @@ export function FlashBar() {
   const [inputValue, setInputValue] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [inputMode, setInputMode] = useState(false); // Toggle between message view and input
+  const [placeholderText, setPlaceholderText] = useState(""); // Shows old message until user types
   const inputRef = useRef<HTMLInputElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
 
   // Zustand store
-  const { addMessage, acknowledge, nextMessage, prevMessage, setMessages, transitionToContinu } =
+  const { addMessage, acknowledge, nextMessage, prevMessage, setMessages, transitionToContinu, setBlinkPhase } =
     useFlashStore();
   const currentMessage = useCurrentMessage();
   const unreadCount = useUnreadCount();
@@ -112,11 +113,20 @@ export function FlashBar() {
   };
 
   /**
-   * Handle click on message to acknowledge
+   * Handle click on message - stop blinking, acknowledge, go to input mode
+   * Old message becomes placeholder until user starts typing
    */
   const handleMessageClick = () => {
-    if (currentMessage && !isCurrentAcknowledged) {
-      acknowledge(currentMessage.id);
+    if (currentMessage) {
+      // Stop all blinking immediately
+      setBlinkPhase("none");
+      // Acknowledge message
+      if (!isCurrentAcknowledged) {
+        acknowledge(currentMessage.id);
+      }
+      // Set old message as placeholder and go to input mode
+      setPlaceholderText(currentMessage.content);
+      setInputMode(true);
     }
   };
 
@@ -144,6 +154,7 @@ export function FlashBar() {
     e.stopPropagation();
     setInputMode(false);
     setInputValue("");
+    setPlaceholderText("");
   };
 
   /**
@@ -237,17 +248,28 @@ export function FlashBar() {
               id="flash-input"
               type="text"
               value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
+              onChange={(e) => {
+                setInputValue(e.target.value);
+                // Clear placeholder when user starts typing
+                if (e.target.value && placeholderText) {
+                  setPlaceholderText("");
+                }
+              }}
               onKeyDown={handleKeyDown}
               maxLength={100}
               disabled={isSending}
               className="flex-1 bg-transparent text-base font-semibold text-foreground focus:outline-none disabled:opacity-50"
               placeholder=""
             />
-            {/* Placeholder that disappears when typing */}
+            {/* Placeholder - shows old message or "FLASH" */}
             {!inputValue && (
-              <span className="absolute left-0 text-base font-medium text-muted-foreground/50 pointer-events-none select-none uppercase tracking-widest">
-                FLASH
+              <span className={cn(
+                "absolute left-0 text-base pointer-events-none select-none",
+                placeholderText
+                  ? "font-normal text-muted-foreground/70"
+                  : "font-medium text-muted-foreground/50 uppercase tracking-widest"
+              )}>
+                {placeholderText || "FLASH"}
               </span>
             )}
             {inputValue.trim() && (
@@ -276,15 +298,15 @@ export function FlashBar() {
         )}
       </div>
 
-      {/* Compose button - show when viewing messages */}
+      {/* Compose button - show when viewing messages (larger for easy access) */}
       {showMessage && (
         <button
           onClick={handleComposeClick}
-          className="p-1 rounded hover:bg-destructive/20 transition-colors"
+          className="p-2 rounded hover:bg-destructive/20 transition-colors"
           title="Skriv ny melding"
           aria-label="Ny melding"
         >
-          <PenLine className="h-5 w-5 text-destructive" />
+          <PenLine className="h-6 w-6 text-destructive" />
         </button>
       )}
 
