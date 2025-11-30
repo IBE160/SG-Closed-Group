@@ -97,7 +97,44 @@
     @apply bg-gray-600/20 border border-gray-600 text-gray-400;
   }
 
-  /* Flash message blinking animation */
+  /* Flash message blinking animations - Story 4.2 */
+
+  /* Quick blink: 3 rapid blinks when new message arrives */
+  @keyframes flash-quick {
+    0%, 100% {
+      background-color: hsl(var(--destructive) / 0.1);
+    }
+    50% {
+      background-color: hsl(var(--destructive));
+      color: hsl(var(--destructive-foreground));
+    }
+  }
+
+  /* Continuous blink: slower pulsing after quick blinks complete */
+  @keyframes flash-continuous {
+    0%, 100% {
+      background-color: hsl(var(--destructive));
+      color: hsl(var(--destructive-foreground));
+      border-color: hsl(var(--destructive));
+    }
+    50% {
+      background-color: hsl(var(--destructive) / 0.2);
+      color: hsl(var(--foreground));
+      border-color: hsl(var(--destructive) / 0.5);
+    }
+  }
+
+  /* 3 quick blinks (0.4s each = 1.2s total) */
+  .animate-flash-quick {
+    animation: flash-quick 0.4s ease-in-out 3;
+  }
+
+  /* Continuous slower blink (2s cycle, infinite) */
+  .animate-flash-continuous {
+    animation: flash-continuous 2s ease-in-out infinite;
+  }
+
+  /* Legacy animations (kept for backwards compatibility) */
   @keyframes flash-blink {
     0%, 100% { background-color: hsl(var(--background)); }
     50% { background-color: hsl(38 92% 50% / 0.2); }

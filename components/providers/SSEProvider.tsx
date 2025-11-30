@@ -9,6 +9,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { SSEClient, createSSEClient } from "@/lib/sse-client";
 import { useConnectionStore } from "@/stores/useConnectionStore";
+import { useFlashStore } from "@/stores/useFlashStore";
 import type { SSEEvent } from "@/lib/sse";
 
 interface SSEProviderProps {
@@ -63,7 +64,15 @@ export function SSEProvider({ children }: SSEProviderProps) {
           break;
 
         case "flash_message":
-          // Will be handled by flash message store in Epic 4
+          // Add message to flash store
+          if (event.data && typeof event.data === "object") {
+            const flashData = event.data as { id: string; content: string; createdAt: string };
+            useFlashStore.getState().addMessage({
+              id: flashData.id,
+              content: flashData.content,
+              createdAt: flashData.createdAt,
+            });
+          }
           console.info("[SSE]", "Flash message received", {
             data: event.data,
             timestamp: event.timestamp,
