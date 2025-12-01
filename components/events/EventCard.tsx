@@ -31,6 +31,7 @@ interface Event {
   priority: "CRITICAL" | "NORMAL";
   status: "ACTIVE" | "RESOLVED" | "ARCHIVED";
   createdBy: string;
+  createdByName?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -118,9 +119,12 @@ export function EventCard({ event, onUpdate }: EventCardProps) {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <time className="text-sm text-muted-foreground whitespace-nowrap">
-                {formattedTime}
-              </time>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">
+                {event.createdByName && (
+                  <span className="font-medium">{event.createdByName} · </span>
+                )}
+                <time>{formattedTime}</time>
+              </span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button

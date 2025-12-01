@@ -72,6 +72,9 @@ export async function POST(request: Request) {
     const body = await request.json();
     const validated = createEventSchema.parse(body);
 
+    // Get creator name from session
+    const createdByName = session.user.name || session.user.email?.split("@")[0] || "Ukjent";
+
     // Run with audit context for automatic audit logging
     const event = await runWithAuditContext(
       { id: session.user.id, email: session.user.email ?? "unknown" },
@@ -82,6 +85,7 @@ export async function POST(request: Request) {
             description: validated.description,
             priority: validated.priority,
             createdBy: session.user.id,
+            createdByName,
           },
         });
       }
