@@ -12,6 +12,9 @@ export interface VaktplanData {
   vakt09Name: string | null;
   lederstotteName: string | null;
   lederstottePhone: string | null;
+  updatedBy: string | null;
+  updatedByName: string | null;
+  updatedAt: string | null;
 }
 
 interface VaktplanState {
@@ -51,6 +54,9 @@ export const useVaktplanStore = create<VaktplanState>((set, get) => ({
           vakt09Name: data.vakt09Name ?? null,
           lederstotteName: data.lederstotteName ?? null,
           lederstottePhone: data.lederstottePhone ?? null,
+          updatedBy: data.updatedBy ?? null,
+          updatedByName: data.updatedByName ?? null,
+          updatedAt: data.updatedAt ?? null,
         },
       }));
     }
