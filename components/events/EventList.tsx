@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo, memo } from "react";
 import { EventCard } from "./EventCard";
-import { useEventsStore, type Event } from "@/stores/useEventsStore";
+import { useEventsStore } from "@/stores/useEventsStore";
 
 type PriorityFilter = "ALL" | "CRITICAL";
 
