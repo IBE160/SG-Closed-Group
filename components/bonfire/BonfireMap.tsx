@@ -222,45 +222,54 @@ function MapSearchBox() {
   const placesLib = useMapsLibrary('places')
   const inputRef = useRef<HTMLInputElement>(null)
   const [searchValue, setSearchValue] = useState('')
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Initialiser Google Places Autocomplete
   useEffect(() => {
-    if (!placesLib || !inputRef.current) return
+    if (!placesLib || !inputRef.current || isInitialized) return
 
-    const autocompleteInstance = new placesLib.Autocomplete(inputRef.current, {
-      componentRestrictions: { country: 'no' }, // Begrens til Norge
-      fields: ['geometry', 'name', 'formatted_address'],
-      types: ['geocode', 'establishment'] // Adresser og steder/virksomheter
-    })
+    try {
+      const autocompleteInstance = new placesLib.Autocomplete(inputRef.current, {
+        componentRestrictions: { country: 'no' }, // Begrens til Norge
+        fields: ['geometry', 'name', 'formatted_address'],
+        types: ['geocode', 'establishment'] // Adresser og steder/virksomheter
+      })
 
-    autocompleteInstance.addListener('place_changed', () => {
-      const place = autocompleteInstance.getPlace()
+      autocompleteInstance.addListener('place_changed', () => {
+        const place = autocompleteInstance.getPlace()
 
-      if (place.geometry?.location && map) {
-        const location = place.geometry.location
+        if (place.geometry?.location && map) {
+          const location = place.geometry.location
 
-        // Panorer kartet til valgt sted
-        map.panTo(location)
+          // Panorer kartet til valgt sted
+          map.panTo(location)
 
-        // Zoom inn basert på stedtype
-        if (place.geometry.viewport) {
-          map.fitBounds(place.geometry.viewport)
-        } else {
-          map.setZoom(15) // Standard zoom for enkeltpunkt
+          // Zoom inn basert på stedtype
+          if (place.geometry.viewport) {
+            map.fitBounds(place.geometry.viewport)
+          } else {
+            map.setZoom(15) // Standard zoom for enkeltpunkt
+          }
+
+          // Oppdater søkefeltet med valgt sted
+          setSearchValue(place.formatted_address || place.name || '')
         }
+      })
 
-        // Oppdater søkefeltet med valgt sted
-        setSearchValue(place.formatted_address || place.name || '')
-      }
-    })
+      setIsInitialized(true)
 
-    return () => {
-      // Cleanup - fjern listener
-      if (autocompleteInstance) {
-        google.maps.event.clearInstanceListeners(autocompleteInstance)
+      return () => {
+        // Cleanup - fjern listener
+        if (autocompleteInstance) {
+          google.maps.event.clearInstanceListeners(autocompleteInstance)
+        }
       }
+    } catch (err) {
+      console.error('Failed to initialize Places Autocomplete:', err)
+      setError('Søkefunksjon ikke tilgjengelig')
     }
-  }, [placesLib, map])
+  }, [placesLib, map, isInitialized])
 
   // Håndter tømming av søkefeltet
   const handleClear = () => {
@@ -269,6 +278,11 @@ function MapSearchBox() {
       inputRef.current.value = ''
       inputRef.current.focus()
     }
+  }
+
+  // Hvis Places API ikke er tilgjengelig, ikke vis søkefeltet
+  if (!placesLib) {
+    return null
   }
 
   return (
@@ -285,13 +299,14 @@ function MapSearchBox() {
         <input
           ref={inputRef}
           type="text"
-          placeholder="Søk etter sted..."
-          className="w-full pl-10 pr-10 py-3 bg-white border border-gray-300 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-800"
+          placeholder={error || "Søk etter sted..."}
+          className={`w-full pl-10 pr-10 py-3 bg-white border rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-800 ${error ? 'border-red-300 placeholder-red-400' : 'border-gray-300'}`}
           onChange={(e) => setSearchValue(e.target.value)}
+          disabled={!!error}
         />
 
         {/* Tøm-knapp */}
-        {searchValue && (
+        {searchValue && !error && (
           <button
             onClick={handleClear}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
