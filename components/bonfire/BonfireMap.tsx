@@ -194,8 +194,9 @@ function BonfireMarkers({ bonfires }: { bonfires: BonfireNotification[] }) {
 /**
  * MapSearchBox - Søkefelt med Google Places Autocomplete
  * Lar brukeren søke etter steder og panorere kartet dit
+ * Viser områdegrenser med stiplet linje (som Google Maps)
  */
-function MapSearchBox() {
+function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null) => void }) {
   const map = useMap()
   const placesLib = useMapsLibrary('places')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -210,7 +211,7 @@ function MapSearchBox() {
     try {
       const autocompleteInstance = new placesLib.Autocomplete(inputRef.current, {
         componentRestrictions: { country: 'no' }, // Begrens til Norge
-        fields: ['geometry', 'name', 'formatted_address'],
+        fields: ['geometry', 'name', 'formatted_address', 'place_id', 'types'],
         // Fjernet types-begrensning for å inkludere områder, bydeler, etc.
         // Legg til bias mot Rogaland-området
         bounds: new google.maps.LatLngBounds(
@@ -227,6 +228,8 @@ function MapSearchBox() {
         if (place.geometry?.location && map) {
           const location = place.geometry.location
           console.log('📍 Moving map to:', location.lat(), location.lng())
+          console.log('📍 Place ID:', place.place_id)
+          console.log('📍 Types:', place.types)
 
           // Panorer kartet til valgt sted
           map.panTo(location)
@@ -240,6 +243,21 @@ function MapSearchBox() {
 
           // Oppdater søkefeltet med valgt sted
           setSearchValue(place.formatted_address || place.name || '')
+
+          // Send place_id til parent for å tegne områdegrense
+          if (onAreaSelect && place.place_id) {
+            // Sjekk om dette er et område (locality, sublocality, neighborhood, etc.)
+            const areaTypes = ['locality', 'sublocality', 'neighborhood', 'postal_town',
+                             'administrative_area_level_1', 'administrative_area_level_2',
+                             'administrative_area_level_3', 'colloquial_area']
+            const isArea = place.types?.some(type => areaTypes.includes(type))
+
+            if (isArea) {
+              onAreaSelect(place.place_id)
+            } else {
+              onAreaSelect(null) // Fjern eksisterende grense for ikke-områder
+            }
+          }
         } else {
           console.warn('⚠️ No geometry found for place:', place.name)
         }
@@ -257,7 +275,7 @@ function MapSearchBox() {
       console.error('Failed to initialize Places Autocomplete:', err)
       setError('Søkefunksjon ikke tilgjengelig')
     }
-  }, [placesLib, map, isInitialized])
+  }, [placesLib, map, isInitialized, onAreaSelect])
 
   // Håndter tømming av søkefeltet
   const handleClear = () => {
@@ -265,6 +283,10 @@ function MapSearchBox() {
     if (inputRef.current) {
       inputRef.current.value = ''
       inputRef.current.focus()
+    }
+    // Fjern områdegrense når søket tømmes
+    if (onAreaSelect) {
+      onAreaSelect(null)
     }
   }
 
@@ -309,10 +331,157 @@ function MapSearchBox() {
   )
 }
 
+/**
+ * AreaBoundary - Tegner områdegrenser med Data-driven styling
+ * Bruker Google Maps Feature Layers for ekte polygongrenser
+ * Fallback til viewport-basert firkant hvis Feature Layers ikke er tilgjengelig
+ */
+function AreaBoundary({ placeId }: { placeId: string | null }) {
+  const map = useMap()
+  const polylineRef = useRef<google.maps.Polyline | null>(null)
+  const markerRef = useRef<google.maps.Marker | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const featureLayerRef = useRef<any>(null)
+  const previousPlaceIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    if (!map) return
+
+    // Fjern eksisterende polyline og markør (fallback)
+    if (polylineRef.current) {
+      polylineRef.current.setMap(null)
+      polylineRef.current = null
+    }
+    if (markerRef.current) {
+      markerRef.current.setMap(null)
+      markerRef.current = null
+    }
+
+    // Reset feature layer styling hvis placeId endres
+    if (featureLayerRef.current && previousPlaceIdRef.current !== placeId) {
+      try {
+        featureLayerRef.current.style = null
+      } catch (e) {
+        console.log('Could not reset feature layer style:', e)
+      }
+    }
+    previousPlaceIdRef.current = placeId
+
+    if (!placeId) return
+
+    // Prøv Data-driven styling først (krever Map ID med Feature Layers aktivert)
+    try {
+      // @ts-expect-error - getFeatureLayer er en ny API som ikke er i typene ennå
+      const localityLayer = map.getFeatureLayer('LOCALITY')
+
+      if (localityLayer) {
+        console.log('🗺️ Using Data-driven styling for boundary')
+        featureLayerRef.current = localityLayer
+
+        // Style kun det valgte området
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        localityLayer.style = (params: any) => {
+          if (params.feature?.placeId === placeId) {
+            return {
+              strokeColor: '#E53935',
+              strokeOpacity: 1.0,
+              strokeWeight: 3,
+              fillColor: '#E53935',
+              fillOpacity: 0.1
+            }
+          }
+          return null // Ingen styling for andre områder
+        }
+        return
+      }
+    } catch (e) {
+      console.log('Feature Layers not available, using fallback:', e)
+    }
+
+    // Fallback: Bruk viewport-basert firkant
+    const geocoder = new google.maps.Geocoder()
+    geocoder.geocode({ placeId }, (results, status) => {
+      if (status === 'OK' && results && results[0]) {
+        const result = results[0]
+        console.log('📍 Using viewport fallback for boundary:', result.formatted_address)
+
+        if (result.geometry.viewport) {
+          const bounds = result.geometry.viewport
+          const ne = bounds.getNorthEast()
+          const sw = bounds.getSouthWest()
+
+          const path = [
+            { lat: ne.lat(), lng: sw.lng() },
+            { lat: ne.lat(), lng: ne.lng() },
+            { lat: sw.lat(), lng: ne.lng() },
+            { lat: sw.lat(), lng: sw.lng() },
+            { lat: ne.lat(), lng: sw.lng() }
+          ]
+
+          const dashedLineSymbol = {
+            path: 'M 0,-1 0,1',
+            strokeOpacity: 1,
+            strokeColor: '#E53935',
+            scale: 3
+          }
+
+          polylineRef.current = new google.maps.Polyline({
+            path,
+            strokeOpacity: 0,
+            icons: [{
+              icon: dashedLineSymbol,
+              offset: '0',
+              repeat: '15px'
+            }],
+            map
+          })
+
+          const center = result.geometry.location
+          markerRef.current = new google.maps.Marker({
+            position: center,
+            map,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: '#FFFFFF',
+              fillOpacity: 0.9,
+              strokeColor: '#E53935',
+              strokeWeight: 2
+            },
+            title: result.formatted_address
+          })
+        }
+      }
+    })
+
+    return () => {
+      if (polylineRef.current) {
+        polylineRef.current.setMap(null)
+      }
+      if (markerRef.current) {
+        markerRef.current.setMap(null)
+      }
+      if (featureLayerRef.current) {
+        try {
+          featureLayerRef.current.style = null
+        } catch (e) {
+          console.log('Could not reset feature layer on cleanup:', e)
+        }
+      }
+    }
+  }, [map, placeId])
+
+  return null
+}
+
+// Google Cloud Map ID med Data-driven styling aktivert
+const GOOGLE_MAP_ID = 'b392a2418028c323ddc77d62'
+
 export default function BonfireMap() {
   const [bonfires, setBonfires] = useState<BonfireNotification[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
+  const [selectedAreaPlaceId, setSelectedAreaPlaceId] = useState<string | null>(null)
   const [mapType, setMapType] = useState<string>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('bonfireMapType') || 'hybrid'
@@ -375,6 +544,7 @@ export default function BonfireMap() {
         <Map
           defaultCenter={defaultCenter}
           defaultZoom={10}
+          mapId={GOOGLE_MAP_ID}
           mapTypeId={mapType}
           onMapTypeIdChanged={(e) => {
             if (e.map.getMapTypeId()) {
@@ -383,7 +553,8 @@ export default function BonfireMap() {
           }}
           style={{ width: '100%', height: '100%' }}
         >
-          <MapSearchBox />
+          <MapSearchBox onAreaSelect={setSelectedAreaPlaceId} />
+          <AreaBoundary placeId={selectedAreaPlaceId} />
           <BonfireMarkers bonfires={bonfires} />
         </Map>
       </APIProvider>
