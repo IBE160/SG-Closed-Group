@@ -1,19 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useCallback, useMemo, memo } from "react";
 import { EventCard } from "./EventCard";
-
-interface Event {
-  id: string;
-  title: string;
-  description: string;
-  priority: "CRITICAL" | "NORMAL";
-  status: "ACTIVE" | "RESOLVED" | "ARCHIVED";
-  createdBy: string;
-  createdByName?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
+import { useEventsStore, type Event } from "@/stores/useEventsStore";
 
 type PriorityFilter = "ALL" | "CRITICAL";
 
@@ -27,111 +16,54 @@ interface EventListProps {
  * EventList Component
  * Displays a list of events with real-time SSE updates
  * Events are sorted by priority (CRITICAL first) then by createdAt DESC
+ *
+ * OPTIMIZED: Uses centralized Zustand store for SSE updates.
+ * NO local EventSource - SSEProvider handles all SSE connections.
  */
-export function EventList({ className, refreshTrigger, priorityFilter = "ALL" }: EventListProps) {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+function EventListComponent({ className, refreshTrigger, priorityFilter = "ALL" }: EventListProps) {
+  // Use centralized store for events data
+  const events = useEventsStore((state) => state.events);
+  const isLoading = useEventsStore((state) => state.isLoading);
+  const error = useEventsStore((state) => state.error);
+  const setEvents = useEventsStore((state) => state.setEvents);
+  const setStoreLoading = useEventsStore((state) => state.setLoading);
+  const setStoreError = useEventsStore((state) => state.setError);
 
-  // Filter events based on priority filter
-  const filteredEvents = priorityFilter === "CRITICAL"
-    ? events.filter((e) => e.priority === "CRITICAL")
-    : events;
+  // Filter events based on priority filter (memoized)
+  const filteredEvents = useMemo(() => {
+    return priorityFilter === "CRITICAL"
+      ? events.filter((e) => e.priority === "CRITICAL")
+      : events;
+  }, [events, priorityFilter]);
 
-  // Sort events: CRITICAL first, then by createdAt DESC
-  const sortEvents = useCallback((eventList: Event[]) => {
-    return [...eventList].sort((a, b) => {
-      // CRITICAL comes first
-      if (a.priority === "CRITICAL" && b.priority !== "CRITICAL") return -1;
-      if (a.priority !== "CRITICAL" && b.priority === "CRITICAL") return 1;
-      // Then sort by createdAt DESC
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-  }, []);
-
-  // Fetch events from API - only update state if data changed
+  // Fetch events from API (initial load only - SSE handles updates)
   const fetchEvents = useCallback(async () => {
     try {
       const response = await fetch("/api/events");
       const data = await response.json();
 
       if (data.success) {
-        const sorted = sortEvents(data.data);
-        // Only update state if events actually changed (prevents re-renders)
-        setEvents(prev => {
-          // Compare by IDs and updatedAt timestamps
-          if (prev.length !== sorted.length) return sorted;
-          const hasChanged = sorted.some((event, i) =>
-            event.id !== prev[i]?.id || event.updatedAt !== prev[i]?.updatedAt
-          );
-          return hasChanged ? sorted : prev;
-        });
-        setError(null);
+        setEvents(data.data);
       } else {
-        setError(data.error?.message || "Kunne ikke hente hendelser");
+        setStoreError(data.error?.message || "Kunne ikke hente hendelser");
       }
     } catch {
-      setError("Nettverksfeil - kunne ikke hente hendelser");
-    } finally {
-      setIsLoading(false);
+      setStoreError("Nettverksfeil - kunne ikke hente hendelser");
     }
-  }, [sortEvents]);
+  }, [setEvents, setStoreError]);
 
-  // Refetch when refreshTrigger changes
+  // Initial fetch - SSE handles updates
+  useEffect(() => {
+    setStoreLoading(true);
+    fetchEvents();
+  }, [fetchEvents, setStoreLoading]);
+
+  // Refetch when refreshTrigger changes (manual refresh from parent)
   useEffect(() => {
     if (refreshTrigger !== undefined && refreshTrigger > 0) {
       fetchEvents();
     }
   }, [refreshTrigger, fetchEvents]);
-
-  // Set up SSE connection for real-time updates + polling fallback
-  useEffect(() => {
-    fetchEvents();
-
-    // Connect to SSE endpoint
-    const eventSource = new EventSource("/api/sse");
-
-    eventSource.onmessage = (messageEvent) => {
-      try {
-        const sseEvent = JSON.parse(messageEvent.data);
-
-        if (sseEvent.type === "event_created") {
-          // Add new event and re-sort
-          setEvents((prev) => sortEvents([sseEvent.data, ...prev]));
-        } else if (sseEvent.type === "event_updated") {
-          // Update existing event
-          setEvents((prev) =>
-            sortEvents(
-              prev.map((e) => (e.id === sseEvent.data.id ? sseEvent.data : e))
-            )
-          );
-        } else if (sseEvent.type === "event_deleted") {
-          // Remove deleted event
-          setEvents((prev) =>
-            prev.filter((e) => e.id !== sseEvent.data.id)
-          );
-        }
-      } catch (err) {
-        console.warn("[EventList] Failed to parse SSE event:", err);
-      }
-    };
-
-    eventSource.onerror = () => {
-      console.warn("[EventList] SSE connection error, will auto-reconnect");
-    };
-
-    // Polling fallback every 1 second for real-time updates
-    // SSE doesn't work reliably on Vercel serverless
-    const pollingInterval = setInterval(() => {
-      fetchEvents();
-    }, 1000);
-
-    // Cleanup on unmount
-    return () => {
-      eventSource.close();
-      clearInterval(pollingInterval);
-    };
-  }, [fetchEvents, sortEvents]);
 
   if (isLoading) {
     return (
@@ -182,3 +114,6 @@ export function EventList({ className, refreshTrigger, priorityFilter = "ALL" }:
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const EventList = memo(EventListComponent);
