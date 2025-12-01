@@ -39,57 +39,62 @@ function getCurrentNorwayTime() {
   }).format(now)
 }
 
-// Godkjente kommuner for 110 Sør-Vest
+// Godkjente kommuner for 110 Sør-Vest (29 kommuner totalt)
+// Kilde: https://www.rogbr.no/110-sor-vest/kommuner
 const GODKJENTE_KOMMUNER = [
+  // Rogaland (23 kommuner)
   'Stavanger', 'Sandnes', 'Sola', 'Randaberg', 'Strand', 'Gjesdal',
   'Klepp', 'Time', 'Hå', 'Eigersund', 'Sokndal', 'Lund', 'Bjerkreim',
   'Hjelmeland', 'Suldal', 'Sauda', 'Kvitsøy', 'Bokn', 'Tysvær',
-  'Karmøy', 'Haugesund', 'Vindafjord',
+  'Karmøy', 'Haugesund', 'Vindafjord', 'Utsira',
+  // Vestland - Sunnhordland (5 kommuner som tilhører 110 Sør-Vest)
   'Bømlo', 'Stord', 'Fitjar', 'Sveio', 'Etne',
+  // Agder (1 kommune)
   'Sirdal'
 ]
 
 const SYSTEM_PROMPT = `Du er en vennlig assistent for 110 Sør-Vest sin bålmeldingstjeneste.
 
-## TIDSINFORMASJON
 Dagens dato og tid: ${getCurrentNorwayTime()} (norsk tid)
 
 ## DIN OPPGAVE
 Samle inn informasjon for bålmelding. Still ETT spørsmål om gangen:
 1. Navn
-2. Adresse (ALLTID valider med validateAddress-verktøyet!)
-3. Telefonnummer (valider med validatePhoneNumber)
+2. Adresse → KALL validateAddress UMIDDELBART!
+3. Telefonnummer → KALL validatePhoneNumber
 4. E-post
 5. Bålstørrelse (Liten/Middels/Stor)
 6. Type (St. Hans/Hageavfall/Bygningsavfall/Annet)
 7. Tidspunkt (valgfritt)
 
-## KRITISK: ADRESSEVALIDERING
-Du MÅ ALLTID kalle validateAddress-verktøyet UMIDDELBART når brukeren oppgir et sted!
-- Verktøyet gir deg: formattedAddress, municipality, latitude, longitude
-- Vis brukeren den EKSAKTE formattedAddress fra verktøyet
-- ALDRI aksepter en adresse uten å validere den først
-- ALDRI gjett eller anta koordinater - bruk KUN verdier fra validateAddress
+## KRITISK: SLIK HÅNDTERER DU ADRESSER
 
-## GODKJENTE KOMMUNER
-Rogaland: Stavanger, Sandnes, Sola, Randaberg, Strand, Gjesdal, Klepp, Time, Hå, Eigersund, Sokndal, Lund, Bjerkreim, Hjelmeland, Suldal, Sauda, Kvitsøy, Bokn, Tysvær, Karmøy, Haugesund, Vindafjord
+Når bruker oppgir et sted, KALL validateAddress MED EN GANG!
+
+Verktøyet svarer med:
+- success=true, isWithinArea=true → Stedet er GODKJENT! Fortell brukeren den verifiserte adressen og gå videre til telefonnummer.
+- success=false, isWithinArea=false → Stedet er UTENFOR vårt område. Forklar vennlig at de må kontakte sin lokale brannstasjon.
+- success=false (uten isWithinArea) → Teknisk feil eller fant ikke stedet. Be om mer spesifikk adresse.
+
+IKKE overstyr verktøyet! Hvis det sier success=true, er adressen godkjent.
+
+## VÅRT DEKNINGSOMRÅDE (29 kommuner)
+Rogaland: Stavanger, Sandnes, Sola, Randaberg, Strand, Gjesdal, Klepp, Time, Hå, Eigersund, Sokndal, Lund, Bjerkreim, Hjelmeland, Suldal, Sauda, Kvitsøy, Bokn, Tysvær, Karmøy, Haugesund, Vindafjord, Utsira
 Vestland: Bømlo, Stord, Fitjar, Sveio, Etne
 Agder: Sirdal
 
-## NÅR DU LAGRER (saveBonfireNotification)
-PÅKREVD: Bruk EKSAKT disse verdiene fra validateAddress:
-- adresse: formattedAddress (f.eks. "Stavanger domkirke, Haakon VIIs gate 2, 4005 Stavanger, Norway")
-- kommune: municipality (f.eks. "Stavanger")
-- latitude: latitude (f.eks. 58.969976)
-- longitude: longitude (f.eks. 5.733107)
-
-ALDRI bruk brukerens opprinnelige tekst som adresse!
+## VED LAGRING (saveBonfireNotification)
+Bruk EKSAKT disse verdiene fra validateAddress:
+- adresse: formattedAddress
+- kommune: municipality
+- latitude: latitude (tall, f.eks. 58.969976)
+- longitude: longitude (tall, f.eks. 5.733107)
 
 ## REGLER
 - Korte, tydelige svar på norsk
-- ALDRI bruk markdown eller stjerner
-- Bekreft alltid den verifiserte adressen tilbake til brukeren
-- Gi en kort oppsummering før du lagrer og be om bekreftelse
+- ALDRI bruk markdown, stjerner eller formattering
+- Når alle data er samlet, gi oppsummering og be om bekreftelse
+- Etter bekreftelse, lagre med saveBonfireNotification
 `
 
 // Tool definitions using AI SDK v5 tool() helper
@@ -210,8 +215,10 @@ const validateAddressTool = tool({
       if (!isValidLocation) {
         return {
           success: false,
-          message: `Stedet ligger i ${kommune || 'ukjent kommune'}, ${fylke || 'ukjent fylke'} som ikke dekkes av 110 Sør-Vest.`,
-          outsideArea: true
+          isWithinArea: false,
+          message: `Beklager, ${kommune || 'dette stedet'} i ${fylke || 'ukjent fylke'} dekkes IKKE av 110 Sør-Vest. Brukeren må kontakte sin lokale brannstasjon.`,
+          detectedMunicipality: kommune,
+          detectedCounty: fylke
         }
       }
 
@@ -224,10 +231,12 @@ const validateAddressTool = tool({
 
       return {
         success: true,
+        isWithinArea: true,
         formattedAddress: finalAddress,
         municipality: kommune,
         latitude: location.lat,
         longitude: location.lng,
+        message: `Stedet er bekreftet: ${finalAddress} i ${kommune} kommune. Koordinater: ${location.lat}, ${location.lng}`
       }
     } catch (error) {
       console.error('Geocoding error:', error)
