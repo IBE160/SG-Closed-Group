@@ -26,6 +26,28 @@ const azure = createAzure({
 
 const mapsClient = new Client({})
 
+// Request-scoped cache for validerte adresser
+// Bruker Map med timestamp som key for å unngå race conditions mellom brukere
+const validatedAddressCache = new Map<string, {
+  formattedAddress: string
+  municipality: string
+  latitude: number
+  longitude: number
+  timestamp: number
+}>()
+
+// Rydd opp gamle cache-entries (eldre enn 10 minutter)
+function cleanupCache() {
+  const tenMinutesAgo = Date.now() - 10 * 60 * 1000
+  const keysToDelete: string[] = []
+  validatedAddressCache.forEach((value, key) => {
+    if (value.timestamp < tenMinutesAgo) {
+      keysToDelete.push(key)
+    }
+  })
+  keysToDelete.forEach(key => validatedAddressCache.delete(key))
+}
+
 function getCurrentNorwayTime() {
   const now = new Date()
   return new Intl.DateTimeFormat('no-NO', {
@@ -269,6 +291,35 @@ const validateAddressTool = tool({
 
       console.log('✅ Sted validert:', finalAddress, kommune, location.lat, location.lng)
 
+      // KRITISK: Lagre validerte koordinater i cache
+      // Bruk normalisert adresse som nøkkel for å finne igjen ved lagring
+      const cacheKey = finalAddress.toLowerCase().trim()
+      validatedAddressCache.set(cacheKey, {
+        formattedAddress: finalAddress,
+        municipality: kommune!, // Vi vet at kommune er satt her pga isValidLocation sjekken
+        latitude: location.lat,
+        longitude: location.lng,
+        timestamp: Date.now()
+      })
+      // Lagre også med kommune som alternativ nøkkel
+      validatedAddressCache.set(`latest_${kommune!.toLowerCase()}`, {
+        formattedAddress: finalAddress,
+        municipality: kommune!,
+        latitude: location.lat,
+        longitude: location.lng,
+        timestamp: Date.now()
+      })
+      // Og en "siste validerte" nøkkel som fallback
+      validatedAddressCache.set('__latest__', {
+        formattedAddress: finalAddress,
+        municipality: kommune!,
+        latitude: location.lat,
+        longitude: location.lng,
+        timestamp: Date.now()
+      })
+      console.log('💾 Koordinater lagret i cache:', { cacheKey, lat: location.lat, lng: location.lng })
+      cleanupCache() // Rydd opp gamle entries
+
       return {
         success: true,
         isWithinArea: true,
@@ -331,22 +382,51 @@ const saveBonfireNotificationTool = tool({
   }),
   execute: async (data) => {
     try {
-      // Log koordinater som AI sender for debugging
-      console.log('🎯 AI sender følgende data til lagring:', {
+      // KRITISK FIX: Finn validerte koordinater fra cache
+      // Prøv flere nøkler for å finne riktig adresse
+      const addressKey = data.adresse.toLowerCase().trim()
+      const municipalityKey = `latest_${data.kommune.toLowerCase()}`
+
+      let cachedAddress = validatedAddressCache.get(addressKey)
+                        || validatedAddressCache.get(municipalityKey)
+                        || validatedAddressCache.get('__latest__')
+
+      // Log for debugging
+      console.log('🎯 AI sender følgende data:', {
         adresse: data.adresse,
         kommune: data.kommune,
         latitude: data.latitude,
         longitude: data.longitude,
-        typeOfLat: typeof data.latitude,
-        typeOfLng: typeof data.longitude
       })
 
-      // Valider at koordinatene er realistiske for Norge (lat: 58-71, lng: 4-31)
-      const lat = Number(data.latitude)
-      const lng = Number(data.longitude)
+      if (cachedAddress) {
+        console.log('✅ Fant LAGREDE koordinater i cache:', {
+          adresse: cachedAddress.formattedAddress,
+          kommune: cachedAddress.municipality,
+          latitude: cachedAddress.latitude,
+          longitude: cachedAddress.longitude,
+        })
+      } else {
+        console.warn('⚠️ Ingen cache funnet - bruker AI-ens koordinater (kan være unøyaktige)')
+        // Fallback til AI-ens data hvis ingen cache (bør ikke skje normalt)
+        cachedAddress = {
+          formattedAddress: data.adresse,
+          municipality: data.kommune,
+          latitude: data.latitude,
+          longitude: data.longitude,
+          timestamp: Date.now()
+        }
+      }
 
+      // Bruk de lagrede koordinatene (fra validateAddress)
+      const lat = cachedAddress.latitude
+      const lng = cachedAddress.longitude
+      const finalAddress = cachedAddress.formattedAddress
+      const finalMunicipality = cachedAddress.municipality
+
+      // Valider at koordinatene er realistiske for Norge (lat: 58-71, lng: 4-31)
       if (isNaN(lat) || isNaN(lng) || lat < 57 || lat > 72 || lng < 4 || lng > 32) {
-        console.error('❌ Ugyldige koordinater fra AI:', { lat, lng })
+        console.error('❌ Ugyldige koordinater:', { lat, lng })
         return {
           success: false,
           message: 'Kunne ikke lagre - ugyldige koordinater. Prøv å validere adressen på nytt.',
@@ -357,8 +437,8 @@ const saveBonfireNotificationTool = tool({
         navn: data.navn,
         telefon: data.telefon,
         epost: data.epost,
-        adresse: data.adresse,
-        kommune: data.kommune,
+        adresse: finalAddress,
+        kommune: finalMunicipality,
         latitude: lat,
         longitude: lng,
         balstorrelse: data.balstorrelse,

@@ -211,14 +211,22 @@ function MapSearchBox() {
       const autocompleteInstance = new placesLib.Autocomplete(inputRef.current, {
         componentRestrictions: { country: 'no' }, // Begrens til Norge
         fields: ['geometry', 'name', 'formatted_address'],
-        types: ['geocode', 'establishment'] // Adresser og steder/virksomheter
+        // Fjernet types-begrensning for å inkludere områder, bydeler, etc.
+        // Legg til bias mot Rogaland-området
+        bounds: new google.maps.LatLngBounds(
+          { lat: 58.0, lng: 5.0 },  // Sør-vest hjørne
+          { lat: 60.0, lng: 7.5 }   // Nord-øst hjørne
+        ),
+        strictBounds: false // Tillat resultater utenfor bounds, men prioriter innenfor
       })
 
       autocompleteInstance.addListener('place_changed', () => {
         const place = autocompleteInstance.getPlace()
+        console.log('🔍 Place selected:', place)
 
         if (place.geometry?.location && map) {
           const location = place.geometry.location
+          console.log('📍 Moving map to:', location.lat(), location.lng())
 
           // Panorer kartet til valgt sted
           map.panTo(location)
@@ -227,11 +235,13 @@ function MapSearchBox() {
           if (place.geometry.viewport) {
             map.fitBounds(place.geometry.viewport)
           } else {
-            map.setZoom(15) // Standard zoom for enkeltpunkt
+            map.setZoom(14) // Standard zoom for enkeltpunkt
           }
 
           // Oppdater søkefeltet med valgt sted
           setSearchValue(place.formatted_address || place.name || '')
+        } else {
+          console.warn('⚠️ No geometry found for place:', place.name)
         }
       })
 
