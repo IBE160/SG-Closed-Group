@@ -89,7 +89,7 @@ export const useFlashStore = create<FlashState>()(
 
       /**
        * Acknowledge a message (mark as read)
-       * After acknowledging, auto-advance to next unread if available
+       * Stay on current message - don't auto-advance
        * Stops blinking if all messages are read (Story 4.2)
        */
       acknowledge: (id) =>
@@ -101,28 +101,6 @@ export const useFlashStore = create<FlashState>()(
 
           const newAcknowledgedIds = [...state.acknowledgedIds, id];
 
-          // Find next unread message after current
-          const currentIdx = state.currentIndex;
-          let nextUnreadIdx = -1;
-
-          // Search forward first
-          for (let i = currentIdx + 1; i < state.messages.length; i++) {
-            if (!newAcknowledgedIds.includes(state.messages[i].id)) {
-              nextUnreadIdx = i;
-              break;
-            }
-          }
-
-          // If no unread forward, search from beginning
-          if (nextUnreadIdx === -1) {
-            for (let i = 0; i < currentIdx; i++) {
-              if (!newAcknowledgedIds.includes(state.messages[i].id)) {
-                nextUnreadIdx = i;
-                break;
-              }
-            }
-          }
-
           // Check if all messages are now acknowledged (Story 4.2)
           const unreadCount = state.messages.filter(
             (m) => !newAcknowledgedIds.includes(m.id)
@@ -131,9 +109,7 @@ export const useFlashStore = create<FlashState>()(
 
           return {
             acknowledgedIds: newAcknowledgedIds,
-            // Auto-advance to next unread if available, otherwise stay on current
-            currentIndex: nextUnreadIdx !== -1 ? nextUnreadIdx : state.currentIndex,
-            // Stop blinking if all messages acknowledged
+            // Stay on current message - don't auto-advance
             blinkPhase: newBlinkPhase,
           };
         }),
