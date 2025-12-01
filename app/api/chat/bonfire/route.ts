@@ -39,84 +39,81 @@ function getCurrentNorwayTime() {
   }).format(now)
 }
 
-// Godkjente kommuner for 110 Sør-Vest
+// Godkjente kommuner for 110 Sør-Vest (29 kommuner totalt)
+// Kilde: https://www.rogbr.no/110-sor-vest/kommuner
 const GODKJENTE_KOMMUNER = [
+  // Rogaland (23 kommuner)
   'Stavanger', 'Sandnes', 'Sola', 'Randaberg', 'Strand', 'Gjesdal',
   'Klepp', 'Time', 'Hå', 'Eigersund', 'Sokndal', 'Lund', 'Bjerkreim',
   'Hjelmeland', 'Suldal', 'Sauda', 'Kvitsøy', 'Bokn', 'Tysvær',
-  'Karmøy', 'Haugesund', 'Vindafjord',
+  'Karmøy', 'Haugesund', 'Vindafjord', 'Utsira',
+  // Vestland - Sunnhordland (5 kommuner som tilhører 110 Sør-Vest)
   'Bømlo', 'Stord', 'Fitjar', 'Sveio', 'Etne',
+  // Agder (1 kommune)
   'Sirdal'
 ]
 
-const SYSTEM_PROMPT = `Du er en vennlig og hjelpsom assistent for 110 Sør-Vest sin bålmeldingstjeneste.
+const SYSTEM_PROMPT = `Du er en vennlig assistent for 110 Sør-Vest sin bålmeldingstjeneste.
 
-## TIDSINFORMASJON
 Dagens dato og tid: ${getCurrentNorwayTime()} (norsk tid)
 
-## DIN PERSONLIGHET
-- Vær varm, vennlig og imøtekommende - du snakker med vanlige folk som vil melde fra om bålbrenning
-- Hold en uformell, men profesjonell tone
-- Vær tålmodig og hjelpsom
-- Bruk korte, tydelige setninger
-- ALDRI bruk markdown, stjerner, eller spesialtegn i svarene
-- Svar alltid på norsk
+## DIN OPPGAVE
+Samle inn ALLE obligatoriske felter for bålmelding. Brukeren kan oppgi informasjon i hvilken som helst rekkefølge. Du må holde oversikt over hvilke felt som mangler og spørre om dem.
 
-## INFORMASJON DU MÅ SAMLE INN
-Still ETT spørsmål om gangen i denne rekkefølgen:
-1. Navn (fullt navn)
-2. Hvor skal bålet være? (adresse, stedsnavn, eller landemerke - valider med validateAddress)
-3. Telefonnummer (8 siffer norsk mobilnummer)
-4. E-postadresse
-5. Hvor stort blir bålet? (Liten/Middels/Stor)
-6. Hva skal brennes? (St. Hans-bål, Hageavfall, Bygningsavfall, eller Annet)
-7. Når skal det brennes? (fra/til tidspunkt - valgfritt)
+## OBLIGATORISKE FELT (alle må fylles ut):
+- Navn
+- Adresse (valider med validateAddress)
+- Telefonnummer (valider med validatePhoneNumber)
+- E-post
+- Bålstørrelse (Liten/Middels/Stor)
+- Type bål (St. Hans/Hageavfall/Bygningsavfall/Annet)
+- Dato og tidspunkt: FRA når og TIL når
 
-## GODKJENTE KOMMUNER
-Vi dekker disse kommunene:
-Rogaland: Stavanger, Sandnes, Sola, Randaberg, Strand, Gjesdal, Klepp, Time, Hå, Eigersund, Sokndal, Lund, Bjerkreim, Hjelmeland, Suldal, Sauda, Kvitsøy, Bokn, Tysvær, Karmøy, Haugesund, Vindafjord
+## VALGFRITT FELT:
+- Ekstra informasjon/beskrivelse
+
+## VIKTIGE REGLER
+1. Uansett hva brukeren sier først, sjekk hvilke obligatoriske felt som mangler
+2. Hvis brukeren oppgir flere ting på en gang, registrer alt og spør om det som mangler
+3. ALDRI lagre meldingen før ALLE 7 obligatoriske felt er fylt ut
+4. Før lagring: Vis oppsummering av ALLE felt og be om bekreftelse
+5. Etter vellykket lagring: Si kun "Bålmeldingen er sendt inn. Ha en trygg og sikker brenning!"
+
+## KRITISK: SLIK HÅNDTERER DU ADRESSER
+
+Når bruker oppgir et sted, KALL validateAddress MED EN GANG!
+
+Verktøyet svarer med:
+- success=true, isWithinArea=true → Stedet er GODKJENT! Fortell brukeren den verifiserte adressen og gå videre til telefonnummer.
+- success=false, isWithinArea=false → Stedet er UTENFOR vårt område. Forklar vennlig at de må kontakte sin lokale brannstasjon.
+- success=false (uten isWithinArea) → Teknisk feil eller fant ikke stedet. Be om mer spesifikk adresse.
+
+IKKE overstyr verktøyet! Hvis det sier success=true, er adressen godkjent.
+
+## VÅRT DEKNINGSOMRÅDE (29 kommuner)
+Rogaland: Stavanger, Sandnes, Sola, Randaberg, Strand, Gjesdal, Klepp, Time, Hå, Eigersund, Sokndal, Lund, Bjerkreim, Hjelmeland, Suldal, Sauda, Kvitsøy, Bokn, Tysvær, Karmøy, Haugesund, Vindafjord, Utsira
 Vestland: Bømlo, Stord, Fitjar, Sveio, Etne
 Agder: Sirdal
 
-## VIKTIGE REGLER FOR ADRESSEVALIDERING
-1. Bruk ALLTID validateAddress-verktøyet når bruker oppgir et sted (adresse, stedsnavn, landemerke, etc.)
-2. Verktøyet returnerer formattedAddress, municipality, latitude og longitude - LAGRE DISSE VERDIENE!
-3. Du MÅ bruke EKSAKT den formattedAddress som validateAddress returnerer - ALDRI brukerens opprinnelige tekst
-4. Hvis adressen er utenfor vårt område, forklar vennlig at de må kontakte sin lokale brannstasjon
+## VED LAGRING (saveBonfireNotification)
+Bruk EKSAKT disse verdiene fra validateAddress:
+- adresse: formattedAddress
+- kommune: municipality
+- latitude: latitude (tall, f.eks. 58.969976)
+- longitude: longitude (tall, f.eks. 5.733107)
 
-## VIKTIGE REGLER FOR LAGRING
-1. Når du har ALL informasjon, gi en kort oppsummering og spør om det stemmer
-2. I oppsummeringen, vis den VERIFISERTE adressen fra validateAddress (formattedAddress)
-3. Når brukeren bekrefter, bruk saveBonfireNotification med:
-   - adresse: EKSAKT formattedAddress fra validateAddress (f.eks. "Stavanger domkirke, Haakon VIIs gate, 4005 Stavanger, Norway")
-   - kommune: EKSAKT municipality fra validateAddress
-   - latitude: EKSAKT latitude fra validateAddress
-   - longitude: EKSAKT longitude fra validateAddress
-4. ALDRI bruk brukerens opprinnelige tekst som adresse - bruk KUN verdiene fra validateAddress!
-
-## EKSEMPEL PÅ GOD SAMTALE
-Bruker: "Hei"
-Du: "Hei! Så hyggelig at du tar kontakt. Jeg hjelper deg gjerne med å registrere bålbrenning. Hva heter du?"
-
-Bruker: "Ola Nordmann"
-Du: "Hei Ola! Hvor skal bålet være? Du kan oppgi en adresse, et stedsnavn eller et landemerke."
-
-Bruker: "ved domkirken i stavanger"
-Du: [Bruker validateAddress med "domkirken stavanger"]
-    Verktøyet returnerer: formattedAddress="Stavanger domkirke, Haakon VIIs gate, 4005 Stavanger, Norway", municipality="Stavanger", lat=58.97, lng=5.73
-Du: "Flott, jeg fant stedet: Stavanger domkirke, Haakon VIIs gate, 4005 Stavanger. Hva er telefonnummeret ditt?"
-
-Bruker: "stavanger sentrum"
-Du: [Bruker validateAddress med "stavanger sentrum"]
-    Verktøyet returnerer: formattedAddress="Stavanger sentrum, Stavanger, Norway", municipality="Stavanger", lat=58.97, lng=5.73
-Du: "Jeg fant Stavanger sentrum. Kan du være mer presis? Hvilken gate eller adresse i sentrum?"
+## REGLER
+- Korte, tydelige svar på norsk
+- ALDRI bruk markdown, stjerner eller formattering
+- Når alle data er samlet, gi oppsummering og be om bekreftelse
+- Etter bekreftelse, lagre med saveBonfireNotification
 `
 
 // Tool definitions using AI SDK v5 tool() helper
 const validateAddressTool = tool({
-  description: 'Validerer norsk adresse, stedsnavn eller landemerke og henter koordinater via Google Maps. Bruk denne når bruker oppgir et sted. Returnerer formattedAddress, municipality, latitude og longitude som MÅ brukes ved lagring.',
+  description: 'PÅKREVD: Kall dette verktøyet HVER gang bruker nevner et sted, adresse eller landemerke. Returnerer nøyaktige koordinater (latitude/longitude) som plasserer bålet korrekt på kartet. Du MÅ bruke returnerte verdier ved lagring.',
   inputSchema: z.object({
-    address: z.string().describe('Adressen, stedsnavnet eller landemerket som skal valideres (f.eks. "Kirkegata 12, Stavanger", "Stavanger domkirke", "Hinna sentrum")'),
+    address: z.string().describe('Stedet brukeren oppga - adresse, stedsnavn, landemerke, etc. (f.eks. "Kirkegata 12 Stavanger", "domkirken stavanger", "Hinna Park")'),
   }),
   execute: async ({ address }) => {
     // Use server-side API key (no referrer restrictions) or fall back to public key
@@ -130,41 +127,47 @@ const validateAddressTool = tool({
     }
 
     try {
-      // Først prøv Places API for bedre stedsgjenkjenning (landemerker, etc.)
-      const placesResult = await mapsClient.findPlaceFromText({
-        params: {
-          input: address + ' Norge',
-          inputtype: PlaceInputType.textQuery,
-          fields: ['formatted_address', 'geometry', 'name', 'place_id'],
-          locationbias: 'circle:50000@58.97,5.73', // Bias mot Stavanger-området
-          key: apiKey
-        }
-      })
+      console.log('🔍 Søker etter adresse:', address)
 
       let formattedAddress: string
       let location: { lat: number; lng: number }
       let placeName: string | undefined
 
-      // Hvis Places API finner noe, bruk det
-      if (placesResult.data.candidates && placesResult.data.candidates.length > 0) {
-        const place = placesResult.data.candidates[0]
-        formattedAddress = place.formatted_address || address
-        location = place.geometry?.location || { lat: 0, lng: 0 }
-        placeName = place.name
+      // Først prøv Geocoding API - bedre for gateadresser som "Ugelivegen 6, 4120 Strand"
+      const geocodeResult = await mapsClient.geocode({
+        params: {
+          address: address + ', Norge',
+          region: 'NO',
+          components: { country: 'NO' },
+          key: apiKey
+        }
+      })
 
-        console.log('📍 Places API fant:', placeName, formattedAddress, location)
+      // Hvis Geocoding finner noe, bruk det
+      if (geocodeResult.data.results.length > 0) {
+        const geoResult = geocodeResult.data.results[0]
+        formattedAddress = geoResult.formatted_address
+        location = geoResult.geometry.location
+        console.log('📍 Geocoding fant:', formattedAddress, location)
       } else {
-        // Fallback til Geocoding API
-        const geocodeResult = await mapsClient.geocode({
+        // Fallback til Places API for landemerker (domkirke, kjøpesenter, etc.)
+        const placesResult = await mapsClient.findPlaceFromText({
           params: {
-            address: address,
-            region: 'NO',
-            components: { country: 'NO' },
+            input: address + ' Norge',
+            inputtype: PlaceInputType.textQuery,
+            fields: ['formatted_address', 'geometry', 'name', 'place_id'],
+            locationbias: 'circle:100000@59.0,6.0',
             key: apiKey
           }
         })
 
-        if (geocodeResult.data.results.length === 0) {
+        if (placesResult.data.candidates && placesResult.data.candidates.length > 0) {
+          const place = placesResult.data.candidates[0]
+          formattedAddress = place.formatted_address || address
+          location = place.geometry?.location || { lat: 0, lng: 0 }
+          placeName = place.name
+          console.log('📍 Places API fant:', placeName, formattedAddress, location)
+        } else {
           // Prøv autocomplete for forslag
           const autocompleteResult = await mapsClient.placeAutocomplete({
             params: {
@@ -189,10 +192,6 @@ const validateAddressTool = tool({
             message: 'Kunne ikke finne stedet. Prøv med en mer spesifikk adresse.',
           }
         }
-
-        const geoResult = geocodeResult.data.results[0]
-        formattedAddress = geoResult.formatted_address
-        location = geoResult.geometry.location
       }
 
       // Hent kommune og fylke via reverse geocoding for å være sikker
@@ -230,8 +229,10 @@ const validateAddressTool = tool({
       if (!isValidLocation) {
         return {
           success: false,
-          message: `Stedet ligger i ${kommune || 'ukjent kommune'}, ${fylke || 'ukjent fylke'} som ikke dekkes av 110 Sør-Vest.`,
-          outsideArea: true
+          isWithinArea: false,
+          message: `Beklager, ${kommune || 'dette stedet'} i ${fylke || 'ukjent fylke'} dekkes IKKE av 110 Sør-Vest. Brukeren må kontakte sin lokale brannstasjon.`,
+          detectedMunicipality: kommune,
+          detectedCounty: fylke
         }
       }
 
@@ -244,10 +245,12 @@ const validateAddressTool = tool({
 
       return {
         success: true,
+        isWithinArea: true,
         formattedAddress: finalAddress,
         municipality: kommune,
         latitude: location.lat,
         longitude: location.lng,
+        message: `Stedet er bekreftet: ${finalAddress} i ${kommune} kommune. Koordinater: ${location.lat}, ${location.lng}`
       }
     } catch (error) {
       console.error('Geocoding error:', error)
@@ -285,35 +288,57 @@ const validatePhoneNumberTool = tool({
 })
 
 const saveBonfireNotificationTool = tool({
-  description: 'Lagrer bålmeldingen til Azure. Bruk ETTER at brukeren har bekreftet all informasjon.',
+  description: 'Lagrer bålmeldingen til Azure. KRITISK: Du MÅ bruke EKSAKTE verdier fra validateAddress for adresse, kommune, latitude og longitude. Disse koordinatene bestemmer hvor flammen vises på kartet! ALLE felt unntatt beskrivelse er OBLIGATORISKE.',
   inputSchema: z.object({
-    navn: z.string().min(2).describe('Fullt navn'),
-    telefon: z.string().describe('Telefonnummer (8 siffer)'),
-    epost: z.string().email().describe('E-postadresse'),
-    adresse: z.string().describe('Verifisert adresse fra validateAddress'),
-    kommune: z.string().describe('Kommune fra validateAddress'),
-    latitude: z.number().describe('Breddegrad fra validateAddress'),
-    longitude: z.number().describe('Lengdegrad fra validateAddress'),
-    balstorrelse: z.enum(['Liten', 'Middels', 'Stor']).describe('Størrelse på bålet'),
-    type: z.enum(['St. Hans', 'Hageavfall', 'Bygningsavfall', 'Annet']).describe('Type bål'),
-    fra: z.string().optional().describe('Fra tidspunkt (ISO 8601)'),
-    til: z.string().optional().describe('Til tidspunkt (ISO 8601)'),
-    beskrivelse: z.string().optional().describe('Beskrivelse av brenningen'),
+    navn: z.string().min(2).describe('Fullt navn på melder (OBLIGATORISK)'),
+    telefon: z.string().describe('Telefonnummer (8 siffer, validert) (OBLIGATORISK)'),
+    epost: z.string().email().describe('E-postadresse (OBLIGATORISK)'),
+    adresse: z.string().describe('EKSAKT formattedAddress fra validateAddress - ALDRI brukerens tekst (OBLIGATORISK)'),
+    kommune: z.string().describe('EKSAKT municipality fra validateAddress (OBLIGATORISK)'),
+    latitude: z.number().describe('EKSAKT latitude fra validateAddress (f.eks. 58.969976) (OBLIGATORISK)'),
+    longitude: z.number().describe('EKSAKT longitude fra validateAddress (f.eks. 5.733107) (OBLIGATORISK)'),
+    balstorrelse: z.enum(['Liten', 'Middels', 'Stor']).describe('Størrelse på bålet (OBLIGATORISK)'),
+    type: z.enum(['St. Hans', 'Hageavfall', 'Bygningsavfall', 'Annet']).describe('Type bål (OBLIGATORISK)'),
+    fra: z.string().describe('Fra tidspunkt (ISO 8601) (OBLIGATORISK)'),
+    til: z.string().describe('Til tidspunkt (ISO 8601) (OBLIGATORISK)'),
+    beskrivelse: z.string().optional().describe('Ekstra informasjon/beskrivelse (valgfritt)'),
   }),
   execute: async (data) => {
     try {
+      // Log koordinater som AI sender for debugging
+      console.log('🎯 AI sender følgende data til lagring:', {
+        adresse: data.adresse,
+        kommune: data.kommune,
+        latitude: data.latitude,
+        longitude: data.longitude,
+        typeOfLat: typeof data.latitude,
+        typeOfLng: typeof data.longitude
+      })
+
+      // Valider at koordinatene er realistiske for Norge (lat: 58-71, lng: 4-31)
+      const lat = Number(data.latitude)
+      const lng = Number(data.longitude)
+
+      if (isNaN(lat) || isNaN(lng) || lat < 57 || lat > 72 || lng < 4 || lng > 32) {
+        console.error('❌ Ugyldige koordinater fra AI:', { lat, lng })
+        return {
+          success: false,
+          message: 'Kunne ikke lagre - ugyldige koordinater. Prøv å validere adressen på nytt.',
+        }
+      }
+
       const azureId = await createBonfireInAzure({
         navn: data.navn,
         telefon: data.telefon,
         epost: data.epost,
         adresse: data.adresse,
         kommune: data.kommune,
-        latitude: data.latitude,
-        longitude: data.longitude,
+        latitude: lat,
+        longitude: lng,
         balstorrelse: data.balstorrelse,
         type: data.type,
-        fra: data.fra ?? undefined,
-        til: data.til ?? undefined,
+        fra: data.fra,
+        til: data.til,
         beskrivelse: data.beskrivelse || 'Registrert via AI-chat',
       })
 
@@ -321,8 +346,7 @@ const saveBonfireNotificationTool = tool({
 
       return {
         success: true,
-        id: azureId,
-        message: `Bålmeldingen er registrert! Referansenummer: ${azureId.slice(0, 8).toUpperCase()}`,
+        message: 'Bålmeldingen er sendt inn. Ha en trygg og sikker brenning!',
       }
     } catch (error) {
       console.error('Error saving bonfire:', error)
