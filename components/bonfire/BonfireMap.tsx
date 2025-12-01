@@ -264,7 +264,7 @@ function MapSearchBox() {
   }
 
   return (
-    <div className="absolute top-4 left-4 z-10 w-80">
+    <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10 w-80">
       <div className="relative">
         {/* Søkeikon */}
         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -278,7 +278,7 @@ function MapSearchBox() {
           ref={inputRef}
           type="text"
           placeholder={error || "Søk etter sted..."}
-          className={`w-full pl-10 pr-10 py-3 bg-white border rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-800 ${error ? 'border-red-300 placeholder-red-400' : 'border-gray-300'}`}
+          className={`w-full pl-10 pr-10 py-2 bg-white border rounded shadow-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-800 text-sm ${error ? 'border-red-300 placeholder-red-400' : 'border-gray-300'}`}
           onChange={(e) => setSearchValue(e.target.value)}
           disabled={!!error}
         />

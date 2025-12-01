@@ -30,9 +30,15 @@ export default function AIChat() {
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const isAdminPage = pathname?.startsWith('/admin')
+
+  // Vent på hydration - fikser SSR/client mismatch
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -56,15 +62,15 @@ export default function AIChat() {
     }
   }, [isLoading, isOpen])
 
-  // Ikke vis AIChat på admin-sider
-  if (isAdminPage) {
+  // Ikke vis AIChat på admin-sider eller før hydration
+  if (!isMounted || isAdminPage) {
     return null
   }
 
   // Sjekk om bålmelding er lagret
   const lastMessage = messages[messages.length - 1]
   const isCompleted = lastMessage?.role === 'assistant' &&
-    lastMessage.content.includes('Referansenummer:')
+    lastMessage.content.includes('Bålmeldingen er sendt inn')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
