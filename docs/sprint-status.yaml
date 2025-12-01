@@ -73,13 +73,14 @@ development_status:
   epic-3-retrospective: optional
 
   # Epic 4: Flash Message System
-  epic-4: contexted  # Tech spec created 2025-11-30
+  # COMPLETE: Full-screen 20-sec flash, click-to-acknowledge, sender excluded
+  epic-4: done
   4-1-flash-message-basic-send-and-receive: done
-  4-2-blink-animation-and-acknowledgment: done  # Full-screen 20-sec flash implemented
-  4-3-smart-typing-detection-and-auto-switch: backlog
-  4-4-message-history-and-multiple-messages: backlog
-  4-5-auto-return-timer-and-flash-folder-ui: backlog
-  4-6-flash-message-performance-optimization: backlog
+  4-2-blink-animation-and-acknowledgment: done  # Full-screen 20-sec flash, click anywhere to ack
+  4-3-smart-typing-detection-and-auto-switch: skipped  # Not needed - emergency flash must always grab attention
+  4-4-message-history-and-multiple-messages: done  # Arrow navigation between last 5 messages in FlashBar
+  4-5-auto-return-timer-and-flash-folder-ui: skipped  # Not needed - FlashBar is always visible (no separate folder)
+  4-6-flash-message-performance-optimization: done  # 1-second polling implemented
   epic-4-retrospective: optional
 
   # Epic 5: Bålmelding (Bonfire) Registration System
