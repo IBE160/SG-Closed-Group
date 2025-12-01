@@ -133,30 +133,39 @@ const validateAddressTool = tool({
       let location: { lat: number; lng: number }
       let placeName: string | undefined
 
-      // Først prøv Geocoding API - bedre for gateadresser som "Ugelivegen 6, 4120 Strand"
-      const geocodeResult = await mapsClient.geocode({
-        params: {
-          address: address + ', Norge',
-          region: 'NO',
-          components: { country: 'NO' },
-          key: apiKey
-        }
-      })
+      // Sjekk om input ser ut som en gateadresse (har nummer)
+      const looksLikeStreetAddress = /\d/.test(address)
 
-      // Hvis Geocoding finner noe, bruk det
-      if (geocodeResult.data.results.length > 0) {
-        const geoResult = geocodeResult.data.results[0]
-        formattedAddress = geoResult.formatted_address
-        location = geoResult.geometry.location
-        console.log('📍 Geocoding fant:', formattedAddress, location)
+      if (looksLikeStreetAddress) {
+        // For gateadresser, bruk Geocoding API først
+        const geocodeResult = await mapsClient.geocode({
+          params: {
+            address: address + ', Norge',
+            region: 'NO',
+            components: { country: 'NO' },
+            key: apiKey
+          }
+        })
+
+        if (geocodeResult.data.results.length > 0) {
+          const geoResult = geocodeResult.data.results[0]
+          formattedAddress = geoResult.formatted_address
+          location = geoResult.geometry.location
+          console.log('📍 Geocoding fant:', formattedAddress, location)
+        } else {
+          return {
+            success: false,
+            message: 'Kunne ikke finne adressen. Sjekk stavemåten og prøv igjen.',
+          }
+        }
       } else {
-        // Fallback til Places API for landemerker (domkirke, kjøpesenter, etc.)
+        // For steder/butikker/landemerker, bruk Places API først
         const placesResult = await mapsClient.findPlaceFromText({
           params: {
-            input: address + ' Norge',
+            input: address + ' Rogaland Norge',
             inputtype: PlaceInputType.textQuery,
             fields: ['formatted_address', 'geometry', 'name', 'place_id'],
-            locationbias: 'circle:100000@59.0,6.0',
+            locationbias: 'circle:50000@58.9,5.7', // Sentrert på Rogaland
             key: apiKey
           }
         })
@@ -168,28 +177,45 @@ const validateAddressTool = tool({
           placeName = place.name
           console.log('📍 Places API fant:', placeName, formattedAddress, location)
         } else {
-          // Prøv autocomplete for forslag
-          const autocompleteResult = await mapsClient.placeAutocomplete({
+          // Fallback til Geocoding hvis Places ikke finner noe
+          const geocodeResult = await mapsClient.geocode({
             params: {
-              input: address,
-              components: ['country:no'],
+              address: address + ', Norge',
+              region: 'NO',
+              components: { country: 'NO' },
               key: apiKey
             }
           })
 
-          if (autocompleteResult.data.predictions.length > 0) {
-            const suggestions = autocompleteResult.data.predictions
-              .slice(0, 5)
-              .map(p => p.description)
+          if (geocodeResult.data.results.length > 0) {
+            const geoResult = geocodeResult.data.results[0]
+            formattedAddress = geoResult.formatted_address
+            location = geoResult.geometry.location
+            console.log('📍 Geocoding fallback fant:', formattedAddress, location)
+          } else {
+            // Prøv autocomplete for forslag
+            const autocompleteResult = await mapsClient.placeAutocomplete({
+              params: {
+                input: address,
+                components: ['country:no'],
+                key: apiKey
+              }
+            })
+
+            if (autocompleteResult.data.predictions.length > 0) {
+              const suggestions = autocompleteResult.data.predictions
+                .slice(0, 5)
+                .map(p => p.description)
+              return {
+                success: false,
+                suggestions,
+                message: 'Fant ikke eksakt sted. Her er forslag:'
+              }
+            }
             return {
               success: false,
-              suggestions,
-              message: 'Fant ikke eksakt sted. Her er forslag:'
+              message: 'Kunne ikke finne stedet. Prøv med en mer spesifikk adresse.',
             }
-          }
-          return {
-            success: false,
-            message: 'Kunne ikke finne stedet. Prøv med en mer spesifikk adresse.',
           }
         }
       }
@@ -250,7 +276,7 @@ const validateAddressTool = tool({
         municipality: kommune,
         latitude: location.lat,
         longitude: location.lng,
-        message: `Stedet er bekreftet: ${finalAddress} i ${kommune} kommune. Koordinater: ${location.lat}, ${location.lng}`
+        message: `Stedet er bekreftet: ${finalAddress} i ${kommune} kommune.`
       }
     } catch (error) {
       console.error('Geocoding error:', error)
