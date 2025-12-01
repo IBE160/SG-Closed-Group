@@ -32,6 +32,9 @@ interface FlashState {
   // Blink animation state (Story 4.2)
   blinkPhase: BlinkPhase;
 
+  // Full-screen flash state - flashes for 20 seconds or until acknowledged
+  fullScreenFlash: boolean;
+
   // Computed values exposed via selectors
   // Actions
   addMessage: (message: FlashMessage) => void;
@@ -46,6 +49,9 @@ interface FlashState {
   // Blink actions (Story 4.2)
   setBlinkPhase: (phase: BlinkPhase) => void;
   transitionToContinu: () => void;
+
+  // Full-screen flash actions
+  stopFullScreenFlash: () => void;
 }
 
 const initialState = {
@@ -53,6 +59,7 @@ const initialState = {
   currentIndex: 0,
   acknowledgedIds: [] as string[],
   blinkPhase: "none" as BlinkPhase,
+  fullScreenFlash: false,
 };
 
 export const useFlashStore = create<FlashState>()(
@@ -64,7 +71,7 @@ export const useFlashStore = create<FlashState>()(
        * Add a new message to the queue
        * New messages are added at the beginning (most recent first)
        * Auto-navigates to the new message
-       * Triggers quick blink animation (Story 4.2)
+       * Triggers full-screen flash for 20 seconds (Story 4.2)
        */
       addMessage: (message) =>
         set((state) => {
@@ -76,6 +83,7 @@ export const useFlashStore = create<FlashState>()(
             messages: [message, ...state.messages].slice(0, 5), // Keep max 5 messages
             currentIndex: 0, // Navigate to newest message
             blinkPhase: "quick", // Start with quick blinks (Story 4.2)
+            fullScreenFlash: true, // Start full-screen flash for 20 seconds
           };
         }),
 
@@ -92,7 +100,7 @@ export const useFlashStore = create<FlashState>()(
       /**
        * Acknowledge a message (mark as read)
        * Stay on current message - don't auto-advance
-       * Stops blinking if all messages are read (Story 4.2)
+       * Stops blinking and full-screen flash when acknowledged (Story 4.2)
        */
       acknowledge: (id) =>
         set((state) => {
@@ -113,6 +121,8 @@ export const useFlashStore = create<FlashState>()(
             acknowledgedIds: newAcknowledgedIds,
             // Stay on current message - don't auto-advance
             blinkPhase: newBlinkPhase,
+            // Stop full-screen flash on acknowledgment
+            fullScreenFlash: unreadCount === 0 ? false : state.fullScreenFlash,
           };
         }),
 
@@ -191,6 +201,12 @@ export const useFlashStore = create<FlashState>()(
             blinkPhase: unreadCount > 0 ? "continuous" : "none",
           };
         }),
+
+      /**
+       * Stop full-screen flash (called after 20 seconds timeout)
+       * Message remains visible but flashing stops
+       */
+      stopFullScreenFlash: () => set({ fullScreenFlash: false }),
     }),
     {
       name: "flash-storage",
@@ -248,3 +264,10 @@ export const useCurrentIsAcknowledged = () =>
  */
 export const useBlinkPhase = () =>
   useFlashStore((state) => state.blinkPhase);
+
+/**
+ * Get full-screen flash state (Story 4.2)
+ * True = screen should be flashing, False = stopped
+ */
+export const useFullScreenFlash = () =>
+  useFlashStore((state) => state.fullScreenFlash);

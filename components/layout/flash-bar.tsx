@@ -33,7 +33,7 @@ export function FlashBar() {
   const lastFetchedIdsRef = useRef<string>("");
 
   // Zustand store - use direct subscriptions to ensure reactivity
-  const { addMessage, acknowledge, nextMessage, prevMessage, setMessages, transitionToContinu, setBlinkPhase } =
+  const { addMessage, acknowledge, nextMessage, prevMessage, setMessages, transitionToContinu, setBlinkPhase, stopFullScreenFlash } =
     useFlashStore();
 
   // Subscribe to individual state slices for proper reactivity
@@ -155,14 +155,15 @@ export function FlashBar() {
 
   /**
    * Handle click on message:
-   * - First click (unread): acknowledge + stop blink (stay in message view)
+   * - First click (unread): acknowledge + stop blink + stop full-screen flash (stay in message view)
    * - Second click (already read): go to input mode with placeholder
    */
   const handleMessageClick = () => {
     if (currentMessage) {
       if (!isCurrentAcknowledged) {
-        // First click: just acknowledge and stop blink
+        // First click: acknowledge, stop blink, and stop full-screen flash
         setBlinkPhase("none");
+        stopFullScreenFlash();
         acknowledge(currentMessage.id);
         // Stay in message view - don't go to input mode
       } else {

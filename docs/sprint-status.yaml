@@ -75,7 +75,7 @@ development_status:
   # Epic 4: Flash Message System
   epic-4: contexted  # Tech spec created 2025-11-30
   4-1-flash-message-basic-send-and-receive: done
-  4-2-blink-animation-and-acknowledgment: review
+  4-2-blink-animation-and-acknowledgment: done  # Full-screen 20-sec flash implemented
   4-3-smart-typing-detection-and-auto-switch: backlog
   4-4-message-history-and-multiple-messages: backlog
   4-5-auto-return-timer-and-flash-folder-ui: backlog

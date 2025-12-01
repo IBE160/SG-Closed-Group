@@ -140,18 +140,19 @@
   }
 
   /* Full-screen flash overlay - VERY attention grabbing */
+  /* 20 seconds of strong flashing until acknowledged */
   @keyframes flash-screen-overlay {
     0%, 100% {
       background-color: transparent;
     }
     50% {
-      background-color: hsl(var(--destructive) / 0.5);
+      background-color: hsl(var(--destructive) / 0.7);
     }
   }
 
-  /* Screen overlay (0.5s x 6 = 3s total) - faster and more blinks */
+  /* Screen overlay - intense infinite animation until stopped */
   .animate-flash-screen {
-    animation: flash-screen-overlay 0.5s ease-in-out 6;
+    animation: flash-screen-overlay 0.4s ease-in-out infinite;
   }
 
   /* Legacy animations (kept for backwards compatibility) */
