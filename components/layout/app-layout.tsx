@@ -11,7 +11,7 @@ interface AppLayoutProps {
 }
 
 // Offentlige ruter som ikke skal ha intern navigasjon
-const PUBLIC_ROUTES = ["/rapporter", "/kart", "/admin"];
+const PUBLIC_ROUTES = ["/rapporter", "/kart", "/admin", "/skjerm"];
 
 export function AppLayout({ children }: AppLayoutProps) {
   const pathname = usePathname();

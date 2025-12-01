@@ -6,7 +6,7 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
 
   // Public routes - no auth required
-  const publicRoutes = ["/login", "/access-denied", "/rapporter"];
+  const publicRoutes = ["/login", "/access-denied", "/rapporter", "/skjerm"];
   if (publicRoutes.some(route => pathname.startsWith(route))) {
     // If logged in and trying to access login, redirect to app
     if (isLoggedIn && pathname === "/login") {
