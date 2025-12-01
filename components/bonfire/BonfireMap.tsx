@@ -221,7 +221,6 @@ function MapSearchBox() {
   const map = useMap()
   const placesLib = useMapsLibrary('places')
   const inputRef = useRef<HTMLInputElement>(null)
-  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
   const [searchValue, setSearchValue] = useState('')
 
   // Initialiser Google Places Autocomplete
@@ -254,8 +253,6 @@ function MapSearchBox() {
         setSearchValue(place.formatted_address || place.name || '')
       }
     })
-
-    setAutocomplete(autocompleteInstance)
 
     return () => {
       // Cleanup - fjern listener
