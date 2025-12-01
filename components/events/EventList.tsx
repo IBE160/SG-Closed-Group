@@ -49,14 +49,23 @@ export function EventList({ className, refreshTrigger, priorityFilter = "ALL" }:
     });
   }, []);
 
-  // Fetch events from API
+  // Fetch events from API - only update state if data changed
   const fetchEvents = useCallback(async () => {
     try {
       const response = await fetch("/api/events");
       const data = await response.json();
 
       if (data.success) {
-        setEvents(sortEvents(data.data));
+        const sorted = sortEvents(data.data);
+        // Only update state if events actually changed (prevents re-renders)
+        setEvents(prev => {
+          // Compare by IDs and updatedAt timestamps
+          if (prev.length !== sorted.length) return sorted;
+          const hasChanged = sorted.some((event, i) =>
+            event.id !== prev[i]?.id || event.updatedAt !== prev[i]?.updatedAt
+          );
+          return hasChanged ? sorted : prev;
+        });
         setError(null);
       } else {
         setError(data.error?.message || "Kunne ikke hente hendelser");

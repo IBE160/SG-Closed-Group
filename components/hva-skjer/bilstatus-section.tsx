@@ -42,14 +42,24 @@ export function BilstatusSection() {
     existingNote: null,
   });
 
-  // Fetch bilstatus from API
+  // Fetch bilstatus from API - only update state if data changed
   const fetchBilstatus = useCallback(async () => {
     try {
       const response = await fetch("/api/bilstatus");
       const data = await response.json();
 
       if (data.success) {
-        setBilstatus(data.data);
+        // Only update state if data actually changed (prevents re-renders)
+        setBilstatus(prev => {
+          if (!prev) return data.data;
+          // Compare relevant fields
+          const changed =
+            prev.S111.status !== data.data.S111.status ||
+            prev.S111.note !== data.data.S111.note ||
+            prev.S112.status !== data.data.S112.status ||
+            prev.S112.note !== data.data.S112.note;
+          return changed ? data.data : prev;
+        });
         setError(null);
       } else {
         setError(data.error?.message || "Kunne ikke hente bilstatus");

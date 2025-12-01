@@ -30,6 +30,7 @@ export function FlashBar() {
   const [placeholderText, setPlaceholderText] = useState(""); // Shows old message until user types
   const inputRef = useRef<HTMLInputElement>(null);
   const barRef = useRef<HTMLDivElement>(null);
+  const lastFetchedIdsRef = useRef<string>("");
 
   // Zustand store - use direct subscriptions to ensure reactivity
   const { addMessage, acknowledge, nextMessage, prevMessage, setMessages, transitionToContinu, setBlinkPhase } =
@@ -48,7 +49,7 @@ export function FlashBar() {
   const isCurrentAcknowledged = currentMessage ? acknowledgedIds.includes(currentMessage.id) : true;
 
   /**
-   * Fetch messages from API
+   * Fetch messages from API - only update if data changed
    */
   const fetchMessages = useCallback(async () => {
     try {
@@ -56,6 +57,15 @@ export function FlashBar() {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
+          // Create a fingerprint of the current fetch result
+          const fetchedIds = result.data.map((m: { id: string }) => m.id).join(",");
+
+          // Skip if we already processed this exact set of messages
+          if (fetchedIds === lastFetchedIdsRef.current) {
+            return;
+          }
+          lastFetchedIdsRef.current = fetchedIds;
+
           const currentIds = useFlashStore.getState().messages.map(m => m.id);
 
           // On initial load, set all messages WITHOUT triggering blink
