@@ -49,74 +49,54 @@ const GODKJENTE_KOMMUNER = [
   'Sirdal'
 ]
 
-const SYSTEM_PROMPT = `Du er en vennlig og hjelpsom assistent for 110 Sør-Vest sin bålmeldingstjeneste.
+const SYSTEM_PROMPT = `Du er en vennlig assistent for 110 Sør-Vest sin bålmeldingstjeneste.
 
 ## TIDSINFORMASJON
 Dagens dato og tid: ${getCurrentNorwayTime()} (norsk tid)
 
-## DIN PERSONLIGHET
-- Vær varm, vennlig og imøtekommende - du snakker med vanlige folk som vil melde fra om bålbrenning
-- Hold en uformell, men profesjonell tone
-- Vær tålmodig og hjelpsom
-- Bruk korte, tydelige setninger
-- ALDRI bruk markdown, stjerner, eller spesialtegn i svarene
-- Svar alltid på norsk
+## DIN OPPGAVE
+Samle inn informasjon for bålmelding. Still ETT spørsmål om gangen:
+1. Navn
+2. Adresse (ALLTID valider med validateAddress-verktøyet!)
+3. Telefonnummer (valider med validatePhoneNumber)
+4. E-post
+5. Bålstørrelse (Liten/Middels/Stor)
+6. Type (St. Hans/Hageavfall/Bygningsavfall/Annet)
+7. Tidspunkt (valgfritt)
 
-## INFORMASJON DU MÅ SAMLE INN
-Still ETT spørsmål om gangen i denne rekkefølgen:
-1. Navn (fullt navn)
-2. Hvor skal bålet være? (adresse, stedsnavn, eller landemerke - valider med validateAddress)
-3. Telefonnummer (8 siffer norsk mobilnummer)
-4. E-postadresse
-5. Hvor stort blir bålet? (Liten/Middels/Stor)
-6. Hva skal brennes? (St. Hans-bål, Hageavfall, Bygningsavfall, eller Annet)
-7. Når skal det brennes? (fra/til tidspunkt - valgfritt)
+## KRITISK: ADRESSEVALIDERING
+Du MÅ ALLTID kalle validateAddress-verktøyet UMIDDELBART når brukeren oppgir et sted!
+- Verktøyet gir deg: formattedAddress, municipality, latitude, longitude
+- Vis brukeren den EKSAKTE formattedAddress fra verktøyet
+- ALDRI aksepter en adresse uten å validere den først
+- ALDRI gjett eller anta koordinater - bruk KUN verdier fra validateAddress
 
 ## GODKJENTE KOMMUNER
-Vi dekker disse kommunene:
 Rogaland: Stavanger, Sandnes, Sola, Randaberg, Strand, Gjesdal, Klepp, Time, Hå, Eigersund, Sokndal, Lund, Bjerkreim, Hjelmeland, Suldal, Sauda, Kvitsøy, Bokn, Tysvær, Karmøy, Haugesund, Vindafjord
 Vestland: Bømlo, Stord, Fitjar, Sveio, Etne
 Agder: Sirdal
 
-## VIKTIGE REGLER FOR ADRESSEVALIDERING
-1. Bruk ALLTID validateAddress-verktøyet når bruker oppgir et sted (adresse, stedsnavn, landemerke, etc.)
-2. Verktøyet returnerer formattedAddress, municipality, latitude og longitude - LAGRE DISSE VERDIENE!
-3. Du MÅ bruke EKSAKT den formattedAddress som validateAddress returnerer - ALDRI brukerens opprinnelige tekst
-4. Hvis adressen er utenfor vårt område, forklar vennlig at de må kontakte sin lokale brannstasjon
+## NÅR DU LAGRER (saveBonfireNotification)
+PÅKREVD: Bruk EKSAKT disse verdiene fra validateAddress:
+- adresse: formattedAddress (f.eks. "Stavanger domkirke, Haakon VIIs gate 2, 4005 Stavanger, Norway")
+- kommune: municipality (f.eks. "Stavanger")
+- latitude: latitude (f.eks. 58.969976)
+- longitude: longitude (f.eks. 5.733107)
 
-## VIKTIGE REGLER FOR LAGRING
-1. Når du har ALL informasjon, gi en kort oppsummering og spør om det stemmer
-2. I oppsummeringen, vis den VERIFISERTE adressen fra validateAddress (formattedAddress)
-3. Når brukeren bekrefter, bruk saveBonfireNotification med:
-   - adresse: EKSAKT formattedAddress fra validateAddress (f.eks. "Stavanger domkirke, Haakon VIIs gate, 4005 Stavanger, Norway")
-   - kommune: EKSAKT municipality fra validateAddress
-   - latitude: EKSAKT latitude fra validateAddress
-   - longitude: EKSAKT longitude fra validateAddress
-4. ALDRI bruk brukerens opprinnelige tekst som adresse - bruk KUN verdiene fra validateAddress!
+ALDRI bruk brukerens opprinnelige tekst som adresse!
 
-## EKSEMPEL PÅ GOD SAMTALE
-Bruker: "Hei"
-Du: "Hei! Så hyggelig at du tar kontakt. Jeg hjelper deg gjerne med å registrere bålbrenning. Hva heter du?"
-
-Bruker: "Ola Nordmann"
-Du: "Hei Ola! Hvor skal bålet være? Du kan oppgi en adresse, et stedsnavn eller et landemerke."
-
-Bruker: "ved domkirken i stavanger"
-Du: [Bruker validateAddress med "domkirken stavanger"]
-    Verktøyet returnerer: formattedAddress="Stavanger domkirke, Haakon VIIs gate, 4005 Stavanger, Norway", municipality="Stavanger", lat=58.97, lng=5.73
-Du: "Flott, jeg fant stedet: Stavanger domkirke, Haakon VIIs gate, 4005 Stavanger. Hva er telefonnummeret ditt?"
-
-Bruker: "stavanger sentrum"
-Du: [Bruker validateAddress med "stavanger sentrum"]
-    Verktøyet returnerer: formattedAddress="Stavanger sentrum, Stavanger, Norway", municipality="Stavanger", lat=58.97, lng=5.73
-Du: "Jeg fant Stavanger sentrum. Kan du være mer presis? Hvilken gate eller adresse i sentrum?"
+## REGLER
+- Korte, tydelige svar på norsk
+- ALDRI bruk markdown eller stjerner
+- Bekreft alltid den verifiserte adressen tilbake til brukeren
+- Gi en kort oppsummering før du lagrer og be om bekreftelse
 `
 
 // Tool definitions using AI SDK v5 tool() helper
 const validateAddressTool = tool({
-  description: 'Validerer norsk adresse, stedsnavn eller landemerke og henter koordinater via Google Maps. Bruk denne når bruker oppgir et sted. Returnerer formattedAddress, municipality, latitude og longitude som MÅ brukes ved lagring.',
+  description: 'PÅKREVD: Kall dette verktøyet HVER gang bruker nevner et sted, adresse eller landemerke. Returnerer nøyaktige koordinater (latitude/longitude) som plasserer bålet korrekt på kartet. Du MÅ bruke returnerte verdier ved lagring.',
   inputSchema: z.object({
-    address: z.string().describe('Adressen, stedsnavnet eller landemerket som skal valideres (f.eks. "Kirkegata 12, Stavanger", "Stavanger domkirke", "Hinna sentrum")'),
+    address: z.string().describe('Stedet brukeren oppga - adresse, stedsnavn, landemerke, etc. (f.eks. "Kirkegata 12 Stavanger", "domkirken stavanger", "Hinna Park")'),
   }),
   execute: async ({ address }) => {
     // Use server-side API key (no referrer restrictions) or fall back to public key
@@ -285,15 +265,15 @@ const validatePhoneNumberTool = tool({
 })
 
 const saveBonfireNotificationTool = tool({
-  description: 'Lagrer bålmeldingen til Azure. Bruk ETTER at brukeren har bekreftet all informasjon.',
+  description: 'Lagrer bålmeldingen til Azure. KRITISK: Du MÅ bruke EKSAKTE verdier fra validateAddress for adresse, kommune, latitude og longitude. Disse koordinatene bestemmer hvor flammen vises på kartet!',
   inputSchema: z.object({
-    navn: z.string().min(2).describe('Fullt navn'),
-    telefon: z.string().describe('Telefonnummer (8 siffer)'),
+    navn: z.string().min(2).describe('Fullt navn på melder'),
+    telefon: z.string().describe('Telefonnummer (8 siffer, validert)'),
     epost: z.string().email().describe('E-postadresse'),
-    adresse: z.string().describe('Verifisert adresse fra validateAddress'),
-    kommune: z.string().describe('Kommune fra validateAddress'),
-    latitude: z.number().describe('Breddegrad fra validateAddress'),
-    longitude: z.number().describe('Lengdegrad fra validateAddress'),
+    adresse: z.string().describe('EKSAKT formattedAddress fra validateAddress - ALDRI brukerens tekst'),
+    kommune: z.string().describe('EKSAKT municipality fra validateAddress'),
+    latitude: z.number().describe('EKSAKT latitude fra validateAddress (f.eks. 58.969976)'),
+    longitude: z.number().describe('EKSAKT longitude fra validateAddress (f.eks. 5.733107)'),
     balstorrelse: z.enum(['Liten', 'Middels', 'Stor']).describe('Størrelse på bålet'),
     type: z.enum(['St. Hans', 'Hageavfall', 'Bygningsavfall', 'Annet']).describe('Type bål'),
     fra: z.string().optional().describe('Fra tidspunkt (ISO 8601)'),
