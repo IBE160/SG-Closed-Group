@@ -102,6 +102,7 @@ development_status:
   5-2-1-google-places-api-for-landmark-recognition: done  # Places API + reverse geocoding
   5-2-2-ai-chat-input-auto-focus: done  # Auto-focus on open and after AI response
   5-2-3-ai-sdk-v5-tool-refactoring: done  # tool() helper, generateText, stepCountIs
+  5-2-4-map-search-with-places-autocomplete: done  # Search field on map with autocomplete
 
 # INTEGRATION TASKS (ADR-006):
 # These tasks integrate Epic 5 bonfire system with main app auth
