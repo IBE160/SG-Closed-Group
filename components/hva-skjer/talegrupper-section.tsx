@@ -66,10 +66,15 @@ function TalegrupperSectionComponent() {
     }
   }, [setTalegrupper, setStoreError]);
 
-  // Initial fetch only - SSE handles updates
+  // Initial fetch + polling fallback (SSE doesn't work reliably on Vercel)
   useEffect(() => {
     setStoreLoading(true);
     fetchTalegrupper();
+
+    // Polling fallback every 2 seconds
+    const pollingInterval = setInterval(fetchTalegrupper, 2000);
+
+    return () => clearInterval(pollingInterval);
   }, [fetchTalegrupper, setStoreLoading]);
 
   // Add/Edit handlers

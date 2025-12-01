@@ -76,10 +76,15 @@ function VaktplanSectionComponent() {
     }
   }, [selectedWeek, selectedYear, setVaktplan, setStoreError]);
 
-  // Fetch on mount and when week changes
+  // Fetch on mount/week change + polling fallback (SSE doesn't work reliably on Vercel)
   useEffect(() => {
     setStoreLoading(true);
     fetchVaktplan();
+
+    // Polling fallback every 2 seconds
+    const pollingInterval = setInterval(fetchVaktplan, 2000);
+
+    return () => clearInterval(pollingInterval);
   }, [fetchVaktplan, setStoreLoading]);
 
   // Week navigation
