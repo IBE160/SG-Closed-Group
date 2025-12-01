@@ -79,13 +79,13 @@ export function FlashBar() {
   }, [addMessage, setMessages]);
 
   /**
-   * Fetch initial messages on mount and poll every 3 seconds for updates
+   * Fetch initial messages on mount and poll every 1 second for updates
    */
   useEffect(() => {
     fetchMessages();
 
-    // Poll for new messages every 3 seconds (fallback for SSE)
-    const pollInterval = setInterval(fetchMessages, 3000);
+    // Poll for new messages every 1 second for real-time updates
+    const pollInterval = setInterval(fetchMessages, 1000);
 
     return () => clearInterval(pollInterval);
   }, [fetchMessages]);

@@ -111,11 +111,11 @@ export function EventList({ className, refreshTrigger, priorityFilter = "ALL" }:
       console.warn("[EventList] SSE connection error, will auto-reconnect");
     };
 
-    // Polling fallback every 30 seconds (for dev mode where SSE broadcast doesn't work across routes)
-    // Longer interval to avoid interrupting user interactions like editing
+    // Polling fallback every 1 second for real-time updates
+    // SSE doesn't work reliably on Vercel serverless
     const pollingInterval = setInterval(() => {
       fetchEvents();
-    }, 30000);
+    }, 1000);
 
     // Cleanup on unmount
     return () => {

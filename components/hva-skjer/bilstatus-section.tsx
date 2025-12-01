@@ -189,10 +189,10 @@ export function BilstatusSection() {
       console.warn("[BilstatusSection] SSE connection error, will auto-reconnect");
     };
 
-    // Polling fallback every 30 seconds
+    // Polling fallback every 1 second for real-time updates
     const pollingInterval = setInterval(() => {
       fetchBilstatus();
-    }, 30000);
+    }, 1000);
 
     // Cleanup on unmount
     return () => {
