@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { UserPlus, Trash2, Shield, ShieldCheck, Loader2 } from "lucide-react";
+import { UserPlus, Trash2, Shield, ShieldCheck, Loader2, MessageSquare } from "lucide-react";
 
 interface User {
   id: string;
@@ -16,6 +16,13 @@ interface User {
   name: string | null;
   role: "OPERATOR" | "ADMINISTRATOR";
   whitelisted: boolean;
+  createdAt: string;
+}
+
+interface FlashMessage {
+  id: string;
+  content: string;
+  senderName: string | null;
   createdAt: string;
 }
 
@@ -27,6 +34,8 @@ export default function InnstillingerPage() {
   const [newRole, setNewRole] = useState<"OPERATOR" | "ADMINISTRATOR">("OPERATOR");
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState("");
+  const [flashMessages, setFlashMessages] = useState<FlashMessage[]>([]);
+  const [flashLoading, setFlashLoading] = useState(false);
 
   const isAdmin = session?.user?.role === "ADMINISTRATOR";
 
@@ -45,9 +54,26 @@ export default function InnstillingerPage() {
     }
   }, [isAdmin]);
 
+  const fetchFlashHistory = useCallback(async () => {
+    if (!isAdmin) return;
+    setFlashLoading(true);
+    try {
+      const res = await fetch("/api/flash?limit=50");
+      const data = await res.json();
+      if (data.success) {
+        setFlashMessages(data.data);
+      }
+    } catch {
+      console.error("Kunne ikke hente flash-historikk");
+    } finally {
+      setFlashLoading(false);
+    }
+  }, [isAdmin]);
+
   useEffect(() => {
     fetchUsers();
-  }, [fetchUsers]);
+    fetchFlashHistory();
+  }, [fetchUsers, fetchFlashHistory]);
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,6 +176,7 @@ export default function InnstillingerPage() {
 
       {/* Admin Panel - Only visible to administrators */}
       {isAdmin && (
+        <>
         <Card>
           <CardHeader>
             <CardTitle>Brukeradministrasjon</CardTitle>
@@ -237,6 +264,48 @@ export default function InnstillingerPage() {
             )}
           </CardContent>
         </Card>
+
+        {/* Flash Message History - Admin only */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-red-500" />
+              Flash-meldingshistorikk
+            </CardTitle>
+            <CardDescription>Siste 50 flash-meldinger</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {flashLoading ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : flashMessages.length === 0 ? (
+              <p className="text-center text-muted-foreground py-4">Ingen flash-meldinger</p>
+            ) : (
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {flashMessages.map((msg) => (
+                  <div
+                    key={msg.id}
+                    className="p-3 bg-muted/50 rounded-lg border-l-4 border-red-500"
+                  >
+                    <p className="font-medium">{msg.content}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {msg.senderName && <span>{msg.senderName} · </span>}
+                      {new Date(msg.createdAt).toLocaleString("no-NO", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        </>
       )}
 
       {!isAdmin && (

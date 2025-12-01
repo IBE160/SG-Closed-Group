@@ -52,7 +52,7 @@ export function FlashBar() {
    */
   const fetchMessages = useCallback(async () => {
     try {
-      const response = await fetch("/api/flash?limit=20");
+      const response = await fetch("/api/flash?limit=5");
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {

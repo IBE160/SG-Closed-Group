@@ -73,7 +73,7 @@ export const useFlashStore = create<FlashState>()(
             return state;
           }
           return {
-            messages: [message, ...state.messages].slice(0, 100), // Keep max 100 messages
+            messages: [message, ...state.messages].slice(0, 5), // Keep max 5 messages
             currentIndex: 0, // Navigate to newest message
             blinkPhase: "quick", // Start with quick blinks (Story 4.2)
           };
@@ -81,10 +81,11 @@ export const useFlashStore = create<FlashState>()(
 
       /**
        * Set all messages (used for initial load)
+       * Limited to 5 messages max
        */
       setMessages: (messages) =>
         set({
-          messages,
+          messages: messages.slice(0, 5),
           currentIndex: 0,
         }),
 
@@ -193,10 +194,8 @@ export const useFlashStore = create<FlashState>()(
     }),
     {
       name: "flash-storage",
-      // Only persist acknowledgedIds to localStorage
-      partialize: (state) => ({
-        acknowledgedIds: state.acknowledgedIds,
-      }),
+      // Don't persist anything - fresh start on each login
+      partialize: () => ({}),
     }
   )
 );
