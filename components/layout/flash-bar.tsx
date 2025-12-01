@@ -108,12 +108,16 @@ export function FlashBar() {
       if (response.ok) {
         const result = await response.json();
         if (result.success && result.data) {
+          const messageId = result.data.id;
           // Add to store immediately (SSE will also receive it)
           addMessage({
-            id: result.data.id,
+            id: messageId,
             content: result.data.content,
             createdAt: result.data.createdAt,
           });
+          // Auto-acknowledge own message so sender doesn't see blink
+          acknowledge(messageId);
+          setBlinkPhase("none");
           setInputValue("");
           setInputMode(false); // Return to message view after sending
         }
@@ -126,7 +130,7 @@ export function FlashBar() {
     } finally {
       setIsSending(false);
     }
-  }, [inputValue, isSending, addMessage]);
+  }, [inputValue, isSending, addMessage, acknowledge, setBlinkPhase]);
 
   /**
    * Handle keyboard events
@@ -139,20 +143,22 @@ export function FlashBar() {
   };
 
   /**
-   * Handle click on message - stop blinking, acknowledge, go to input mode
-   * Old message becomes placeholder until user starts typing
+   * Handle click on message:
+   * - First click (unread): acknowledge + stop blink (stay in message view)
+   * - Second click (already read): go to input mode with placeholder
    */
   const handleMessageClick = () => {
     if (currentMessage) {
-      // Stop all blinking immediately
-      setBlinkPhase("none");
-      // Acknowledge message
       if (!isCurrentAcknowledged) {
+        // First click: just acknowledge and stop blink
+        setBlinkPhase("none");
         acknowledge(currentMessage.id);
+        // Stay in message view - don't go to input mode
+      } else {
+        // Second click (already acknowledged): go to input mode
+        setPlaceholderText(currentMessage.content);
+        setInputMode(true);
       }
-      // Set old message as placeholder and go to input mode
-      setPlaceholderText(currentMessage.content);
-      setInputMode(true);
     }
   };
 

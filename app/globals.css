@@ -149,9 +149,9 @@
     }
   }
 
-  /* Screen overlay (0.8s x 3 = 2.4s total) - high opacity */
+  /* Screen overlay (0.5s x 6 = 3s total) - faster and more blinks */
   .animate-flash-screen {
-    animation: flash-screen-overlay 0.8s ease-in-out 3;
+    animation: flash-screen-overlay 0.5s ease-in-out 6;
   }
 
   /* Legacy animations (kept for backwards compatibility) */
