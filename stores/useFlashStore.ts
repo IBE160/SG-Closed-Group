@@ -37,7 +37,7 @@ interface FlashState {
 
   // Computed values exposed via selectors
   // Actions
-  addMessage: (message: FlashMessage) => void;
+  addMessage: (message: FlashMessage, isOwnMessage?: boolean) => void;
   setMessages: (messages: FlashMessage[]) => void;
   acknowledge: (id: string) => void;
   nextMessage: () => void;
@@ -71,9 +71,9 @@ export const useFlashStore = create<FlashState>()(
        * Add a new message to the queue
        * New messages are added at the beginning (most recent first)
        * Auto-navigates to the new message
-       * Triggers full-screen flash for 20 seconds (Story 4.2)
+       * Triggers full-screen flash for 20 seconds (Story 4.2) - unless it's own message
        */
-      addMessage: (message) =>
+      addMessage: (message, isOwnMessage = false) =>
         set((state) => {
           // Avoid duplicates
           if (state.messages.some((m) => m.id === message.id)) {
@@ -82,8 +82,9 @@ export const useFlashStore = create<FlashState>()(
           return {
             messages: [message, ...state.messages].slice(0, 5), // Keep max 5 messages
             currentIndex: 0, // Navigate to newest message
-            blinkPhase: "quick", // Start with quick blinks (Story 4.2)
-            fullScreenFlash: true, // Start full-screen flash for 20 seconds
+            // Don't flash for own messages - only for messages from others
+            blinkPhase: isOwnMessage ? "none" : "quick",
+            fullScreenFlash: isOwnMessage ? false : true,
           };
         }),
 

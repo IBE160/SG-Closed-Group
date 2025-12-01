@@ -119,16 +119,15 @@ export function FlashBar() {
         const result = await response.json();
         if (result.success && result.data) {
           const messageId = result.data.id;
-          // Add to store immediately (SSE will also receive it)
+          // Add to store immediately - pass true to skip flash for own message
           addMessage({
             id: messageId,
             content: result.data.content,
             senderName: result.data.senderName,
             createdAt: result.data.createdAt,
-          });
-          // Auto-acknowledge own message so sender doesn't see blink
+          }, true); // isOwnMessage = true - don't flash for sender
+          // Auto-acknowledge own message
           acknowledge(messageId);
-          setBlinkPhase("none");
           setInputValue("");
           setInputMode(false); // Return to message view after sending
         }
@@ -141,7 +140,7 @@ export function FlashBar() {
     } finally {
       setIsSending(false);
     }
-  }, [inputValue, isSending, addMessage, acknowledge, setBlinkPhase]);
+  }, [inputValue, isSending, addMessage, acknowledge]);
 
   /**
    * Handle keyboard events
