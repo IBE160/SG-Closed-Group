@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,27 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { getISOWeek, getYear, addWeeks, subWeeks } from "date-fns";
 import { ChevronLeft, ChevronRight, Pencil, Phone, User } from "lucide-react";
-
-interface VaktplanData {
-  id: string | null;
-  week: number;
-  year: number;
-  vakt09Name: string | null;
-  lederstotteName: string | null;
-  lederstottePhone: string | null;
-}
-
-interface SSEEvent {
-  type: string;
-  data: {
-    week: number;
-    year: number;
-    vakt09Name: string | null;
-    lederstotteName: string | null;
-    lederstottePhone: string | null;
-  };
-  timestamp: string;
-}
+import { useVaktplanStore } from "@/stores/useVaktplanStore";
 
 /**
  * VaktplanSection Component
@@ -44,16 +24,21 @@ interface SSEEvent {
  * - Vakt09: name only
  * - Lederstøtte: name + phone
  *
- * Story 3.6: Vaktplan - Duty Roster Display
- * Story 3.7: Vaktplan - Administrator Editing
- *
- * UPDATED 2025-11-27: Changed from generic positions to fixed fields
+ * OPTIMIZED: Uses centralized Zustand store for SSE updates.
+ * NO local EventSource - SSEProvider handles all SSE connections.
  */
-export function VaktplanSection() {
+function VaktplanSectionComponent() {
   const { data: session } = useSession();
-  const [vaktplan, setVaktplan] = useState<VaktplanData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use centralized store for vaktplan data
+  const vaktplan = useVaktplanStore((state) => state.vaktplan);
+  const isLoading = useVaktplanStore((state) => state.isLoading);
+  const error = useVaktplanStore((state) => state.error);
+  const setVaktplan = useVaktplanStore((state) => state.setVaktplan);
+  const setCurrentWeekYear = useVaktplanStore((state) => state.setCurrentWeekYear);
+  const setStoreLoading = useVaktplanStore((state) => state.setLoading);
+  const setStoreError = useVaktplanStore((state) => state.setError);
+
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,10 +53,12 @@ export function VaktplanSection() {
   const [editLederstotteName, setEditLederstotteName] = useState("");
   const [editLederstottePhone, setEditLederstottePhone] = useState("");
 
-  // SSE connection ref
-  const eventSourceRef = useRef<EventSource | null>(null);
-
   const isAdmin = session?.user?.role === "ADMINISTRATOR";
+
+  // Update store with current week/year for SSE filtering
+  useEffect(() => {
+    setCurrentWeekYear(selectedWeek, selectedYear);
+  }, [selectedWeek, selectedYear, setCurrentWeekYear]);
 
   // Fetch vaktplan from API
   const fetchVaktplan = useCallback(async () => {
@@ -81,62 +68,19 @@ export function VaktplanSection() {
 
       if (data.success) {
         setVaktplan(data.data);
-        setError(null);
       } else {
-        setError(data.error?.message || "Kunne ikke hente vaktplan");
+        setStoreError(data.error?.message || "Kunne ikke hente vaktplan");
       }
     } catch {
-      setError("Nettverksfeil - kunne ikke hente vaktplan");
-    } finally {
-      setIsLoading(false);
+      setStoreError("Nettverksfeil - kunne ikke hente vaktplan");
     }
-  }, [selectedWeek, selectedYear]);
+  }, [selectedWeek, selectedYear, setVaktplan, setStoreError]);
 
   // Fetch on mount and when week changes
   useEffect(() => {
-    setIsLoading(true);
+    setStoreLoading(true);
     fetchVaktplan();
-  }, [fetchVaktplan]);
-
-  // SSE subscription for real-time updates
-  useEffect(() => {
-    const eventSource = new EventSource("/api/sse");
-    eventSourceRef.current = eventSource;
-
-    eventSource.onmessage = (event) => {
-      try {
-        const sseEvent: SSEEvent = JSON.parse(event.data);
-        if (sseEvent.type === "vaktplan_update") {
-          // Only update if it matches current week/year
-          if (sseEvent.data.week === selectedWeek && sseEvent.data.year === selectedYear) {
-            setVaktplan((prev) => ({
-              ...prev,
-              id: prev?.id ?? null,
-              week: sseEvent.data.week,
-              year: sseEvent.data.year,
-              vakt09Name: sseEvent.data.vakt09Name,
-              lederstotteName: sseEvent.data.lederstotteName,
-              lederstottePhone: sseEvent.data.lederstottePhone,
-            }));
-          }
-        }
-      } catch {
-        // Ignore parse errors
-      }
-    };
-
-    eventSource.onerror = () => {
-      // Reconnect after error
-      eventSource.close();
-      setTimeout(() => {
-        eventSourceRef.current = new EventSource("/api/sse");
-      }, 5000);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [selectedWeek, selectedYear]);
+  }, [fetchVaktplan, setStoreLoading]);
 
   // Week navigation
   const goToPreviousWeek = () => {
@@ -394,3 +338,6 @@ export function VaktplanSection() {
     </>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const VaktplanSection = memo(VaktplanSectionComponent);

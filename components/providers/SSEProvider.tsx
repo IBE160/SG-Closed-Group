@@ -2,13 +2,21 @@
 
 /**
  * SSE Provider Component
- * Initializes and manages SSE connection for the entire application
- * Wrap your app with this provider to enable real-time updates
+ * Centralized SSE connection manager for the entire application.
+ *
+ * IMPORTANT: This is the ONLY component that should create an EventSource connection.
+ * All other components should use Zustand stores to access real-time data.
+ *
+ * This prevents multiple SSE connections and eliminates blinking/race conditions.
  */
 
 import { useEffect, useRef, useCallback } from "react";
 import { SSEClient, createSSEClient } from "@/lib/sse-client";
 import { useConnectionStore } from "@/stores/useConnectionStore";
+import { useEventsStore, type Event } from "@/stores/useEventsStore";
+import { useBilstatusStore, type BilstatusData } from "@/stores/useBilstatusStore";
+import { useTalegrupperStore, type Talegruppe } from "@/stores/useTalegrupperStore";
+import { useVaktplanStore } from "@/stores/useVaktplanStore";
 import type { SSEEvent } from "@/lib/sse";
 
 interface SSEProviderProps {
@@ -18,6 +26,7 @@ interface SSEProviderProps {
 export function SSEProvider({ children }: SSEProviderProps) {
   const clientRef = useRef<SSEClient | null>(null);
 
+  // Connection store actions
   const {
     setStatus,
     setClientId,
@@ -26,8 +35,14 @@ export function SSEProvider({ children }: SSEProviderProps) {
     setError,
   } = useConnectionStore();
 
+  // Get store actions (not state, to avoid re-renders)
+  const eventsStore = useEventsStore;
+  const bilstatusStore = useBilstatusStore;
+  const talegrupperStore = useTalegrupperStore;
+  const vaktplanStore = useVaktplanStore;
+
   /**
-   * Handle incoming SSE events
+   * Handle incoming SSE events and dispatch to appropriate stores
    */
   const handleEvent = useCallback(
     (event: SSEEvent) => {
@@ -44,68 +59,81 @@ export function SSEProvider({ children }: SSEProviderProps) {
           ) {
             setClientId((event.data as { clientId: string }).clientId);
           }
-          console.info("[SSE]", "Connected with client ID", {
-            data: event.data,
-            timestamp: event.timestamp,
-          });
           break;
 
         case "heartbeat":
           setLastHeartbeatAt(event.timestamp);
-          // Heartbeats are quiet - don't log unless debugging
           break;
 
-        case "test_broadcast":
-          console.info("[SSE]", "Test broadcast received", {
-            data: event.data,
-            timestamp: event.timestamp,
-          });
+        // Event updates - dispatch to events store
+        case "event_created":
+          eventsStore.getState().addEvent(event.data as Event);
+          break;
+
+        case "event_updated":
+          eventsStore.getState().updateEvent(event.data as Event);
+          break;
+
+        case "event_deleted":
+          if (event.data && typeof event.data === "object" && "id" in event.data) {
+            eventsStore.getState().removeEvent((event.data as { id: string }).id);
+          }
+          break;
+
+        // Bilstatus updates - dispatch to bilstatus store
+        case "bilstatus_update":
+          bilstatusStore.getState().setBilstatus(event.data as BilstatusData);
+          break;
+
+        // Talegrupper updates - dispatch to talegrupper store
+        case "talegruppe_created":
+          talegrupperStore.getState().addTalegruppe(event.data as Talegruppe);
+          break;
+
+        case "talegruppe_updated":
+          talegrupperStore.getState().updateTalegruppe(event.data as Talegruppe);
+          break;
+
+        case "talegruppe_deleted":
+          if (event.data && typeof event.data === "object" && "id" in event.data) {
+            talegrupperStore.getState().removeTalegruppe((event.data as { id: string }).id);
+          }
+          break;
+
+        // Vaktplan updates - dispatch to vaktplan store
+        case "vaktplan_update":
+          if (event.data && typeof event.data === "object") {
+            const data = event.data as {
+              week: number;
+              year: number;
+              vakt09Name?: string | null;
+              lederstotteName?: string | null;
+              lederstottePhone?: string | null;
+            };
+            vaktplanStore.getState().updateVaktplanFromSSE(data);
+          }
+          break;
+
+        // Bonfire events - log for now (handled separately in bonfire pages)
+        case "bonfire_created":
+        case "bonfire_status_update":
+          // These are handled by bonfire-specific components
           break;
 
         case "flash_message":
-          // Will be handled by flash message store in Epic 4
-          console.info("[SSE]", "Flash message received", {
-            data: event.data,
-            timestamp: event.timestamp,
-          });
+          // Flash messages can be handled by a dedicated flash message system
+          console.info("[SSE] Flash message:", event.data);
           break;
 
-        case "bilstatus_update":
-          // Will be handled by bilstatus store in Epic 3
-          console.info("[SSE]", "Bilstatus update received", {
-            data: event.data,
-            timestamp: event.timestamp,
-          });
-          break;
-
-        case "event_created":
-        case "event_updated":
-        case "event_deleted":
-          // Will be handled by event store in Epic 3
-          console.info("[SSE]", `Event ${event.type} received`, {
-            data: event.data,
-            timestamp: event.timestamp,
-          });
-          break;
-
-        case "bonfire_created":
-        case "bonfire_status_update":
-          // Will be handled by bonfire store in Epic 5
-          console.info("[SSE]", `Bonfire ${event.type} received`, {
-            data: event.data,
-            timestamp: event.timestamp,
-          });
+        case "test_broadcast":
+          console.info("[SSE] Test broadcast received:", event.data);
           break;
 
         default:
-          console.warn("[SSE]", "Unknown event type received", {
-            type: event.type,
-            data: event.data,
-            timestamp: event.timestamp,
-          });
+          console.warn("[SSE] Unknown event type:", event.type);
       }
     },
-    [setLastEventAt, setLastHeartbeatAt, setClientId]
+    [setLastEventAt, setLastHeartbeatAt, setClientId, eventsStore, bilstatusStore, talegrupperStore, vaktplanStore]
   );
 
   /**
@@ -114,35 +142,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const handleStatusChange = useCallback(
     (status: Parameters<typeof setStatus>[0]) => {
       setStatus(status);
-
-      // Log status changes with appropriate level
-      switch (status) {
-        case "connected":
-          console.info("[SSE]", "Status: Connected", {
-            timestamp: new Date().toISOString(),
-          });
-          break;
-        case "connecting":
-          console.info("[SSE]", "Status: Connecting...", {
-            timestamp: new Date().toISOString(),
-          });
-          break;
-        case "reconnecting":
-          console.warn("[SSE]", "Status: Reconnecting...", {
-            timestamp: new Date().toISOString(),
-          });
-          break;
-        case "polling":
-          console.warn("[SSE]", "Status: Fallen back to polling", {
-            timestamp: new Date().toISOString(),
-          });
-          break;
-        case "disconnected":
-          console.warn("[SSE]", "Status: Disconnected", {
-            timestamp: new Date().toISOString(),
-          });
-          break;
-      }
     },
     [setStatus]
   );
@@ -156,23 +155,19 @@ export function SSEProvider({ children }: SSEProviderProps) {
         message: error.message,
         timestamp: new Date().toISOString(),
       });
-
-      console.error("[SSE]", "Connection error", {
-        error: error.message,
-        timestamp: new Date().toISOString(),
-      });
+      console.error("[SSE] Connection error:", error.message);
     },
     [setError]
   );
 
   /**
-   * Initialize SSE connection on mount
+   * Initialize SSE connection on mount - SINGLE connection for entire app
    */
   useEffect(() => {
     // Only run in browser
     if (typeof window === "undefined") return;
 
-    // Create SSE client
+    // Create SSE client with optimized settings
     const client = createSSEClient({
       url: "/api/sse",
       onEvent: handleEvent,
@@ -180,7 +175,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
       onError: handleError,
       reconnectDelay: 3000,
       maxReconnectAttempts: 5,
-      pollingInterval: 5000,
+      pollingInterval: 10000, // Fallback polling only when SSE fails
       enablePollingFallback: true,
     });
 
@@ -189,15 +184,8 @@ export function SSEProvider({ children }: SSEProviderProps) {
     // Connect to SSE
     client.connect();
 
-    console.info("[SSE]", "SSE Provider initialized", {
-      timestamp: new Date().toISOString(),
-    });
-
     // Cleanup on unmount
     return () => {
-      console.info("[SSE]", "SSE Provider unmounting", {
-        timestamp: new Date().toISOString(),
-      });
       client.disconnect();
       clientRef.current = null;
     };

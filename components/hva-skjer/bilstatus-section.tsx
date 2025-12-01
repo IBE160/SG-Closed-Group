@@ -1,24 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, X } from "lucide-react";
 import { VehicleStatusBox } from "@/components/bilstatus/VehicleStatusBox";
 import { GreyStatusDialog } from "@/components/bilstatus/GreyStatusDialog";
-
-type VehicleStatus = "READY" | "OUT" | "OUT_OF_SERVICE";
-
-interface VehicleData {
-  status: VehicleStatus;
-  note: string | null;
-  updatedAt: string;
-}
-
-interface BilstatusData {
-  S111: VehicleData;
-  S112: VehicleData;
-}
+import { useBilstatusStore } from "@/stores/useBilstatusStore";
 
 interface GreyDialogState {
   open: boolean;
@@ -29,12 +17,20 @@ interface GreyDialogState {
 /**
  * BilstatusSection Component
  * Displays vehicle status for S111 and S112 with real-time SSE updates
+ *
+ * OPTIMIZED: Uses centralized Zustand store for SSE updates.
+ * NO local EventSource - SSEProvider handles all SSE connections.
  */
-export function BilstatusSection() {
-  const [bilstatus, setBilstatus] = useState<BilstatusData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+function BilstatusSectionComponent() {
+  // Use centralized store for bilstatus data
+  const bilstatus = useBilstatusStore((state) => state.bilstatus);
+  const isLoading = useBilstatusStore((state) => state.isLoading);
+  const error = useBilstatusStore((state) => state.error);
+  const setBilstatus = useBilstatusStore((state) => state.setBilstatus);
+  const setStoreLoading = useBilstatusStore((state) => state.setLoading);
+  const setStoreError = useBilstatusStore((state) => state.setError);
+
   const [isToggling, setIsToggling] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [greyDialog, setGreyDialog] = useState<GreyDialogState>({
     open: false,
@@ -42,7 +38,7 @@ export function BilstatusSection() {
     existingNote: null,
   });
 
-  // Fetch bilstatus from API
+  // Fetch bilstatus from API (initial load only)
   const fetchBilstatus = useCallback(async () => {
     try {
       const response = await fetch("/api/bilstatus");
@@ -50,16 +46,19 @@ export function BilstatusSection() {
 
       if (data.success) {
         setBilstatus(data.data);
-        setError(null);
       } else {
-        setError(data.error?.message || "Kunne ikke hente bilstatus");
+        setStoreError(data.error?.message || "Kunne ikke hente bilstatus");
       }
     } catch {
-      setError("Nettverksfeil - kunne ikke hente bilstatus");
-    } finally {
-      setIsLoading(false);
+      setStoreError("Nettverksfeil - kunne ikke hente bilstatus");
     }
-  }, []);
+  }, [setBilstatus, setStoreError]);
+
+  // Initial fetch only - SSE handles updates
+  useEffect(() => {
+    setStoreLoading(true);
+    fetchBilstatus();
+  }, [fetchBilstatus, setStoreLoading]);
 
   // Toggle vehicle status
   const handleToggle = async (vehicleId: "S111" | "S112") => {
@@ -166,41 +165,6 @@ export function BilstatusSection() {
     }
   };
 
-  // Set up SSE connection for real-time updates
-  useEffect(() => {
-    fetchBilstatus();
-
-    // Connect to SSE endpoint
-    const eventSource = new EventSource("/api/sse");
-
-    eventSource.onmessage = (messageEvent) => {
-      try {
-        const sseEvent = JSON.parse(messageEvent.data);
-
-        if (sseEvent.type === "bilstatus_update") {
-          setBilstatus(sseEvent.data);
-        }
-      } catch (err) {
-        console.warn("[BilstatusSection] Failed to parse SSE event:", err);
-      }
-    };
-
-    eventSource.onerror = () => {
-      console.warn("[BilstatusSection] SSE connection error, will auto-reconnect");
-    };
-
-    // Polling fallback every 30 seconds
-    const pollingInterval = setInterval(() => {
-      fetchBilstatus();
-    }, 30000);
-
-    // Cleanup on unmount
-    return () => {
-      eventSource.close();
-      clearInterval(pollingInterval);
-    };
-  }, [fetchBilstatus]);
-
   if (error) {
     return (
       <Card>
@@ -274,3 +238,6 @@ export function BilstatusSection() {
     </>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const BilstatusSection = memo(BilstatusSectionComponent);

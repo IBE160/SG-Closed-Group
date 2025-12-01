@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, memo } from "react";
 import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,32 +15,26 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Pencil, Plus, Radio, Trash2 } from "lucide-react";
-
-interface Talegruppe {
-  id: string;
-  name: string;
-  details: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface SSEEvent {
-  type: string;
-  data: Talegruppe | { id: string };
-  timestamp: string;
-}
+import { useTalegrupperStore, type Talegruppe } from "@/stores/useTalegrupperStore";
 
 /**
  * TalegrupperSection Component
  * Displays and manages radio talk groups (talegrupper)
  *
- * Story 3.8: Talegrupper (Radio Talk Groups)
+ * OPTIMIZED: Uses centralized Zustand store for SSE updates.
+ * NO local EventSource - SSEProvider handles all SSE connections.
  */
-export function TalegrupperSection() {
+function TalegrupperSectionComponent() {
   const { data: session } = useSession();
-  const [talegrupper, setTalegrupper] = useState<Talegruppe[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Use centralized store for talegrupper data
+  const talegrupper = useTalegrupperStore((state) => state.talegrupper);
+  const isLoading = useTalegrupperStore((state) => state.isLoading);
+  const error = useTalegrupperStore((state) => state.error);
+  const setTalegrupper = useTalegrupperStore((state) => state.setTalegrupper);
+  const setStoreLoading = useTalegrupperStore((state) => state.setLoading);
+  const setStoreError = useTalegrupperStore((state) => state.setError);
+
   const [actionError, setActionError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -54,12 +48,9 @@ export function TalegrupperSection() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingTalegruppe, setDeletingTalegruppe] = useState<Talegruppe | null>(null);
 
-  // SSE connection ref
-  const eventSourceRef = useRef<EventSource | null>(null);
-
   const isAdmin = session?.user?.role === "ADMINISTRATOR";
 
-  // Fetch talegrupper from API
+  // Fetch talegrupper from API (initial load only)
   const fetchTalegrupper = useCallback(async () => {
     try {
       const response = await fetch("/api/talegrupper");
@@ -67,60 +58,19 @@ export function TalegrupperSection() {
 
       if (data.success) {
         setTalegrupper(data.data);
-        setError(null);
       } else {
-        setError(data.error?.message || "Kunne ikke hente talegrupper");
+        setStoreError(data.error?.message || "Kunne ikke hente talegrupper");
       }
     } catch {
-      setError("Nettverksfeil - kunne ikke hente talegrupper");
-    } finally {
-      setIsLoading(false);
+      setStoreError("Nettverksfeil - kunne ikke hente talegrupper");
     }
-  }, []);
+  }, [setTalegrupper, setStoreError]);
 
-  // Fetch on mount
+  // Initial fetch only - SSE handles updates
   useEffect(() => {
+    setStoreLoading(true);
     fetchTalegrupper();
-  }, [fetchTalegrupper]);
-
-  // SSE subscription for real-time updates
-  useEffect(() => {
-    const eventSource = new EventSource("/api/sse");
-    eventSourceRef.current = eventSource;
-
-    eventSource.onmessage = (event) => {
-      try {
-        const sseEvent: SSEEvent = JSON.parse(event.data);
-
-        if (sseEvent.type === "talegruppe_created") {
-          const newTalegruppe = sseEvent.data as Talegruppe;
-          setTalegrupper((prev) => [newTalegruppe, ...prev]);
-        } else if (sseEvent.type === "talegruppe_updated") {
-          const updatedTalegruppe = sseEvent.data as Talegruppe;
-          setTalegrupper((prev) =>
-            prev.map((t) => (t.id === updatedTalegruppe.id ? updatedTalegruppe : t))
-          );
-        } else if (sseEvent.type === "talegruppe_deleted") {
-          const { id } = sseEvent.data as { id: string };
-          setTalegrupper((prev) => prev.filter((t) => t.id !== id));
-        }
-      } catch {
-        // Ignore parse errors
-      }
-    };
-
-    eventSource.onerror = () => {
-      // Reconnect after error
-      eventSource.close();
-      setTimeout(() => {
-        eventSourceRef.current = new EventSource("/api/sse");
-      }, 5000);
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+  }, [fetchTalegrupper, setStoreLoading]);
 
   // Add/Edit handlers
   const openAddDialog = () => {
@@ -395,3 +345,6 @@ export function TalegrupperSection() {
     </>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export const TalegrupperSection = memo(TalegrupperSectionComponent);
