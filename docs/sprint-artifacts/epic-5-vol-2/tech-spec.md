@@ -150,6 +150,89 @@ const result = await generateText({
 
 ---
 
+### Story 5.2.4: Map Search with Google Places Autocomplete
+
+**Status:** Done
+
+**Beskrivelse:**
+Brukere trengte en måte å søke etter steder på kartet, likt som i Google Maps. Uten søkefunksjon måtte de manuelt navigere rundt på kartet for å finne områder.
+
+**Løsning:**
+- Lagt til `MapSearchBox` komponent med Google Places Autocomplete
+- Søkefeltet vises øverst til venstre på kartet
+- Autocomplete foreslår steder mens brukeren skriver
+- Klikk på forslag panorerer kartet til stedet og zoomer inn
+- Begrenset til Norge (`componentRestrictions: { country: 'no' }`)
+- Støtter både adresser og steder/virksomheter
+
+**Tekniske endringer:**
+```typescript
+import { useMapsLibrary } from '@vis.gl/react-google-maps'
+
+function MapSearchBox() {
+  const map = useMap()
+  const placesLib = useMapsLibrary('places')
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!placesLib || !inputRef.current) return
+
+    const autocomplete = new placesLib.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: 'no' },
+      fields: ['geometry', 'name', 'formatted_address'],
+      types: ['geocode', 'establishment']
+    })
+
+    autocomplete.addListener('place_changed', () => {
+      const place = autocomplete.getPlace()
+      if (place.geometry?.location && map) {
+        map.panTo(place.geometry.location)
+        if (place.geometry.viewport) {
+          map.fitBounds(place.geometry.viewport)
+        } else {
+          map.setZoom(15)
+        }
+      }
+    })
+  }, [placesLib, map])
+}
+```
+
+**Filer endret:**
+- `components/bonfire/BonfireMap.tsx`
+
+---
+
+## Commits
+
+| Commit | Beskrivelse |
+|--------|-------------|
+| `468307d` | Improve AI chat: Places API for landmarks + auto-focus input |
+| `54ca81b` | Add JSDoc comments to bonfire chat components |
+| `696aeb4` | Add Epic 5 retrospective document |
+
+---
+
+## Testing
+
+### Adressevalidering
+- [x] "domkirken i stavanger" → Finner "Stavanger domkirke, Haakon VIIs gate 2, 4005 Stavanger"
+- [x] "hinna sentrum" → Finner korrekt adresse med Stavanger kommune
+- [x] Adresser utenfor området (Oslo) → Viser feilmelding
+
+### Auto-fokus
+- [x] Åpne chat → Input fokusert automatisk
+- [x] Send melding → Vent på svar → Input fokusert automatisk
+- [x] Kan skrive umiddelbart uten å klikke
+
+### Kartsøk
+- [ ] Søk etter "Stavanger domkirke" → Kartet panorerer til domkirken
+- [ ] Søk etter "Haugesund" → Kartet panorerer til Haugesund by
+- [ ] Autocomplete viser forslag mens man skriver
+- [ ] Tøm-knapp fjerner søketeksten
+
+---
+
 ## Neste steg
 
 - [ ] Vurdere streaming av AI-responser for bedre UX

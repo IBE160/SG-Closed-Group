@@ -1,8 +1,22 @@
+/**
+ * Bonfire Map Component
+ *
+ * Epic 5 Vol.2: Interaktivt kart med bålmeldinger og søkefunksjon
+ *
+ * Funksjoner:
+ * - Google Maps med bålmelding-markører (flammeikoner)
+ * - Søkefelt med Google Places Autocomplete
+ * - Klikk på søkeresultat → kart panorerer til stedet
+ * - Fargekodede markører: grønn (planlagt), rød (aktiv), gul (utløpt)
+ *
+ * @see docs/sprint-artifacts/epic-5-vol-2/tech-spec.md
+ */
+
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { APIProvider, Map, AdvancedMarker, InfoWindow, useMap } from '@vis.gl/react-google-maps'
+import { APIProvider, Map, AdvancedMarker, InfoWindow, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 
 interface BonfireNotification {
   id: string
@@ -199,6 +213,102 @@ function BonfireMarkers({ bonfires }: { bonfires: BonfireNotification[] }) {
   )
 }
 
+/**
+ * MapSearchBox - Søkefelt med Google Places Autocomplete
+ * Lar brukeren søke etter steder og panorere kartet dit
+ */
+function MapSearchBox() {
+  const map = useMap()
+  const placesLib = useMapsLibrary('places')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null)
+  const [searchValue, setSearchValue] = useState('')
+
+  // Initialiser Google Places Autocomplete
+  useEffect(() => {
+    if (!placesLib || !inputRef.current) return
+
+    const autocompleteInstance = new placesLib.Autocomplete(inputRef.current, {
+      componentRestrictions: { country: 'no' }, // Begrens til Norge
+      fields: ['geometry', 'name', 'formatted_address'],
+      types: ['geocode', 'establishment'] // Adresser og steder/virksomheter
+    })
+
+    autocompleteInstance.addListener('place_changed', () => {
+      const place = autocompleteInstance.getPlace()
+
+      if (place.geometry?.location && map) {
+        const location = place.geometry.location
+
+        // Panorer kartet til valgt sted
+        map.panTo(location)
+
+        // Zoom inn basert på stedtype
+        if (place.geometry.viewport) {
+          map.fitBounds(place.geometry.viewport)
+        } else {
+          map.setZoom(15) // Standard zoom for enkeltpunkt
+        }
+
+        // Oppdater søkefeltet med valgt sted
+        setSearchValue(place.formatted_address || place.name || '')
+      }
+    })
+
+    setAutocomplete(autocompleteInstance)
+
+    return () => {
+      // Cleanup - fjern listener
+      if (autocompleteInstance) {
+        google.maps.event.clearInstanceListeners(autocompleteInstance)
+      }
+    }
+  }, [placesLib, map])
+
+  // Håndter tømming av søkefeltet
+  const handleClear = () => {
+    setSearchValue('')
+    if (inputRef.current) {
+      inputRef.current.value = ''
+      inputRef.current.focus()
+    }
+  }
+
+  return (
+    <div className="absolute top-4 left-4 z-10 w-80">
+      <div className="relative">
+        {/* Søkeikon */}
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        {/* Søkefelt */}
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Søk etter sted..."
+          className="w-full pl-10 pr-10 py-3 bg-white border border-gray-300 rounded-lg shadow-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-800"
+          onChange={(e) => setSearchValue(e.target.value)}
+        />
+
+        {/* Tøm-knapp */}
+        {searchValue && (
+          <button
+            onClick={handleClear}
+            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+          >
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function BonfireMap() {
   const [bonfires, setBonfires] = useState<BonfireNotification[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -274,6 +384,7 @@ export default function BonfireMap() {
           mapId="bonfire-map"
           style={{ width: '100%', height: '100%' }}
         >
+          <MapSearchBox />
           <BonfireMarkers bonfires={bonfires} />
         </Map>
       </APIProvider>
