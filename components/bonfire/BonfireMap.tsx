@@ -16,7 +16,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { APIProvider, Map, AdvancedMarker, InfoWindow, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import { APIProvider, Map, Marker, InfoWindow, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 
 interface BonfireNotification {
   id: string
@@ -35,41 +35,20 @@ interface BonfireNotification {
   createdAt?: string
 }
 
-// Flamme SVG komponent - grønn for fremtidig, rød for aktiv, gul for utløpt
+// Bålstatus typer - grønn for fremtidig, rød for aktiv, gul for utløpt
 type BonfireStatus = 'future' | 'active' | 'expired'
 
-function FlameIcon({ status }: { status: BonfireStatus }) {
-  // Grønn for fremtidig, rød for aktiv, gul for utløpt
+// Marker ikoner som data URLs (SVG flamme)
+function getMarkerIcon(status: BonfireStatus): string {
   const colors = {
-    future: { outer: '#22C55E', inner: '#86EFAC' },   // Grønn
-    active: { outer: '#EF4444', inner: '#FCA5A5' },   // Rød
-    expired: { outer: '#F59E0B', inner: '#FDE047' }   // Gul
+    future: { outer: '%2322C55E', inner: '%2386EFAC' },   // Grønn (URL-encoded)
+    active: { outer: '%23EF4444', inner: '%23FCA5A5' },   // Rød
+    expired: { outer: '%23F59E0B', inner: '%23FDE047' }   // Gul
   }
   const { outer, inner } = colors[status]
 
-  return (
-    <svg
-      width="32"
-      height="40"
-      viewBox="0 0 24 30"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="cursor-pointer hover:scale-110 transition-transform drop-shadow-lg"
-    >
-      {/* Flamme form */}
-      <path
-        d="M12 2C12 2 4 10 4 16C4 20.4183 7.58172 24 12 24C16.4183 24 20 20.4183 20 16C20 10 12 2 12 2Z"
-        fill={outer}
-        stroke="white"
-        strokeWidth="1.5"
-      />
-      {/* Indre flamme */}
-      <path
-        d="M12 8C12 8 8 13 8 16C8 18.2091 9.79086 20 12 20C14.2091 20 16 18.2091 16 16C16 13 12 8 12 8Z"
-        fill={inner}
-      />
-    </svg>
-  )
+  // SVG som data URL
+  return `data:image/svg+xml,${encodeURIComponent(`<svg width="32" height="40" viewBox="0 0 24 30" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C12 2 4 10 4 16C4 20.4183 7.58172 24 12 24C16.4183 24 20 20.4183 20 16C20 10 12 2 12 2Z" fill="${decodeURIComponent(outer)}" stroke="white" stroke-width="1.5"/><path d="M12 8C12 8 8 13 8 16C8 18.2091 9.79086 20 12 20C14.2091 20 16 18.2091 16 16C16 13 12 8 12 8Z" fill="${decodeURIComponent(inner)}"/></svg>`)}`
 }
 
 // Sjekk bålstatus basert på tid: fremtidig, aktiv eller utløpt
@@ -141,13 +120,12 @@ function BonfireMarkers({ bonfires }: { bonfires: BonfireNotification[] }) {
       {bonfires.map((bonfire) => {
         const status = getBonfireStatus(bonfire.dateFrom, bonfire.dateTo)
         return (
-          <AdvancedMarker
+          <Marker
             key={bonfire.id}
             position={{ lat: Number(bonfire.latitude), lng: Number(bonfire.longitude) }}
             onClick={() => handleMarkerClick(bonfire)}
-          >
-            <FlameIcon status={status} />
-          </AdvancedMarker>
+            icon={getMarkerIcon(status)}
+          />
         )
       })}
 
@@ -393,7 +371,6 @@ export default function BonfireMap() {
               handleMapTypeChange(e.map.getMapTypeId()!)
             }
           }}
-          mapId="bonfire-map"
           style={{ width: '100%', height: '100%' }}
         >
           <MapSearchBox />
