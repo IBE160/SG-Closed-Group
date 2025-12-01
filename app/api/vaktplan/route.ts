@@ -1,14 +1,15 @@
 /**
  * Vaktplan API - Duty Roster Display and Management
  * Story 3.6: Vaktplan - Duty Roster Display (fixed fields)
- * Story 3.7: Vaktplan - Administrator Editing
+ * Story 3.7: Vaktplan - User Editing (all logged-in users)
  *
  * UPDATED 2025-11-27: Changed from generic positions to fixed fields
+ * UPDATED 2025-11-30: All users can edit (not just admin)
  * - Vakt09: name only
  * - Lederstøtte: name + phone
  *
  * GET /api/vaktplan - Fetch duty roster for a specific week
- * POST /api/vaktplan - Create/update roster entry (admin only, upsert)
+ * POST /api/vaktplan - Create/update roster entry (all users, upsert)
  */
 
 import { NextResponse } from "next/server";
@@ -89,6 +90,8 @@ export async function GET(request: Request) {
         vakt09Name: roster?.vakt09Name ?? null,
         lederstotteName: roster?.lederstotteName ?? null,
         lederstottePhone: roster?.lederstottePhone ?? null,
+        updatedByName: roster?.updatedByName ?? null,
+        updatedAt: roster?.updatedAt ?? null,
       },
     });
   } catch (error) {
@@ -102,7 +105,7 @@ export async function GET(request: Request) {
 
 /**
  * POST /api/vaktplan
- * Create or update roster entry for a week (admin only, upsert)
+ * Create or update roster entry for a week (all logged-in users, upsert)
  *
  * Request body:
  * - week: ISO week number (1-53)
@@ -121,17 +124,14 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check administrator role
-    if (session.user.role !== "ADMINISTRATOR") {
-      return NextResponse.json(
-        { success: false, error: { message: "Kun administratorer kan redigere vaktplan", code: "FORBIDDEN" } },
-        { status: 403 }
-      );
-    }
+    // All logged-in users can edit vaktplan (not admin-only)
 
     const body = await request.json();
     const validated = upsertRosterSchema.parse(body);
     const { week, year, vakt09Name, lederstotteName, lederstottePhone } = validated;
+
+    // Get user display name
+    const userName = session.user.name ?? session.user.email ?? "Ukjent";
 
     // Upsert roster entry with audit context
     const rosterEntry = await runWithAuditContext(
@@ -148,6 +148,8 @@ export async function POST(request: Request) {
             vakt09Name: vakt09Name ?? null,
             lederstotteName: lederstotteName ?? null,
             lederstottePhone: lederstottePhone ?? null,
+            updatedBy: session.user.id,
+            updatedByName: userName,
           },
           create: {
             weekNumber: week,
@@ -155,6 +157,8 @@ export async function POST(request: Request) {
             vakt09Name: vakt09Name ?? null,
             lederstotteName: lederstotteName ?? null,
             lederstottePhone: lederstottePhone ?? null,
+            updatedBy: session.user.id,
+            updatedByName: userName,
           },
         });
       }
@@ -167,6 +171,8 @@ export async function POST(request: Request) {
       vakt09Name: rosterEntry.vakt09Name,
       lederstotteName: rosterEntry.lederstotteName,
       lederstottePhone: rosterEntry.lederstottePhone,
+      updatedByName: rosterEntry.updatedByName,
+      updatedAt: rosterEntry.updatedAt,
     });
 
     console.info("[VAKTPLAN]", "Entry upserted", {

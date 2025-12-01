@@ -23,9 +23,11 @@ import { useTalegrupperStore, type Talegruppe } from "@/stores/useTalegrupperSto
  *
  * OPTIMIZED: Uses centralized Zustand store for SSE updates.
  * NO local EventSource - SSEProvider handles all SSE connections.
+ *
+ * All logged-in users can edit (not just admin)
  */
 function TalegrupperSectionComponent() {
-  const { data: session } = useSession();
+  useSession(); // Keep session for auth check
 
   // Use centralized store for talegrupper data
   const talegrupper = useTalegrupperStore((state) => state.talegrupper);
@@ -47,8 +49,6 @@ function TalegrupperSectionComponent() {
   // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingTalegruppe, setDeletingTalegruppe] = useState<Talegruppe | null>(null);
-
-  const isAdmin = session?.user?.role === "ADMINISTRATOR";
 
   // Fetch talegrupper from API (initial load only)
   const fetchTalegrupper = useCallback(async () => {
@@ -197,31 +197,27 @@ function TalegrupperSectionComponent() {
               <Radio className="h-5 w-5" />
               Talegrupper
             </CardTitle>
-            {isAdmin && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7"
-                onClick={openAddDialog}
-                title="Legg til talegruppe"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={openAddDialog}
+              title="Legg til talegruppe"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
           {talegrupper.length === 0 ? (
             <div className="text-center text-muted-foreground text-sm">
               Ingen talegrupper registrert
-              {isAdmin && (
-                <div className="mt-2">
-                  <Button variant="outline" size="sm" onClick={openAddDialog}>
-                    <Plus className="h-4 w-4 mr-1" />
-                    Legg til
-                  </Button>
-                </div>
-              )}
+              <div className="mt-2">
+                <Button variant="outline" size="sm" onClick={openAddDialog}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Legg til
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-2">
@@ -237,29 +233,33 @@ function TalegrupperSectionComponent() {
                     <div className="text-xs text-muted-foreground mt-0.5 truncate">
                       {talegruppe.details}
                     </div>
+                    {/* Show who created/updated */}
+                    {talegruppe.createdByName && (
+                      <div className="text-xs text-muted-foreground mt-1 italic">
+                        Opprettet av {talegruppe.createdByName}
+                      </div>
+                    )}
                   </div>
-                  {isAdmin && (
-                    <div className="flex items-center gap-1 ml-2 flex-shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={() => openEditDialog(talegruppe)}
-                        title="Rediger"
-                      >
-                        <Pencil className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive"
-                        onClick={() => openDeleteDialog(talegruppe)}
-                        title="Slett"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-1 ml-2 flex-shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => openEditDialog(talegruppe)}
+                      title="Rediger"
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-destructive hover:text-destructive"
+                      onClick={() => openDeleteDialog(talegruppe)}
+                      title="Slett"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

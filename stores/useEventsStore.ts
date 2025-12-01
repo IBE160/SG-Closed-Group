@@ -12,6 +12,7 @@ export interface Event {
   priority: "CRITICAL" | "NORMAL";
   status: "ACTIVE" | "RESOLVED" | "ARCHIVED";
   createdBy: string;
+  createdByName?: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -9,6 +9,10 @@ export interface Talegruppe {
   id: string;
   name: string;
   details: string;
+  createdBy: string | null;
+  createdByName: string | null;
+  updatedBy: string | null;
+  updatedByName: string | null;
   createdAt: string;
   updatedAt: string;
 }

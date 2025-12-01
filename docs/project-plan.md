@@ -76,24 +76,32 @@
 - [x] Retrospective
   - [x] Epic 1 retro → `.bmad-ephemeral/retrospectives/epic-1-retro-2025-11-23.md`
 
-### Epic 2: Authentication & Access Control 🔄 READY
+### Epic 2: Authentication & Access Control ✅ COMPLETE
 
 - [x] Epic Tech Context
   - [x] Tech spec → `docs/tech-spec-epic-2.md`
-- [ ] Stories:
-  - [ ] 2.1: NextAuth.js Configuration with Google OAuth
-  - [ ] 2.2: User Whitelist Management System
-  - [ ] 2.3: Role-Based Access Control (RBAC)
-  - [ ] 2.4: Protected Routes and API Endpoints
-  - [ ] 2.5: Login Page and User Profile UI
-  - [ ] 2.6: Session Management and Security Hardening
-- [ ] Retrospective
+- [x] Stories:
+  - [x] 2.1: NextAuth.js Configuration with Google OAuth
+  - [x] 2.2: User Whitelist Management System
+  - [x] 2.3: Role-Based Access Control (RBAC)
+  - [x] 2.4: Protected Routes and API Endpoints
+  - [x] 2.5: Login Page and User Profile UI
+  - [x] 2.6: Session Management and Security Hardening
+- [~] Retrospective (optional)
 
-### Epic 3: Event Control Dashboard ⏳ BACKLOG
+### Epic 3: Event Control Dashboard ✅ COMPLETE
 
-- [ ] Epic Tech Context
-- [ ] Stories (7 stories)
-- [ ] Retrospective
+- [x] Epic Tech Context
+- [x] Stories:
+  - [x] 3.1: Event Management - Create and List Events
+  - [x] 3.2: Event Management - Edit and Delete Events
+  - [x] 3.3: Priority System and Filtering
+  - [x] 3.4: Bilstatus - Vehicle Rotation Status Display and Toggle
+  - [x] 3.5: Bilstatus - Grey Status with Notes
+  - [x] 3.6: Vaktplan - Duty Roster Display (Fixed fields: Vakt09, Lederstøtte)
+  - [x] 3.7: Vaktplan - User Editing (all users can edit)
+  - [x] 3.8: Talegrupper - Radio Talk Groups (CRUD + SSE + audit)
+- [~] Retrospective (optional)
 
 ### Epic 4: Flash Message System ⏳ BACKLOG
 
@@ -101,11 +109,18 @@
 - [ ] Stories (6 stories)
 - [ ] Retrospective
 
-### Epic 5: Bålmelding (Bonfire) System ⏳ BACKLOG
+### Epic 5: Bålmelding (Bonfire) System ✅ COMPLETE
 
-- [ ] Epic Tech Context
-- [ ] Stories (7 stories)
-- [ ] Retrospective
+- [x] Epic Tech Context
+- [x] Stories:
+  - [x] 5.1: Google Maps Integration and Map Display
+  - [x] 5.2: Manual Bonfire Registration Baseline
+  - [x] 5.3: Azure OpenAI Email Parsing (AI SDK v5)
+  - [~] 5.4: Power Automate Integration (SKIPPED - not needed)
+  - [x] 5.5: Municipality Filtering and Search
+  - [x] 5.6: Automatic Bonfire Expiration
+  - [x] 5.7: Manual Review Queue for Flagged Registrations
+- [x] Retrospective → `.bmad-ephemeral/retrospectives/epic-5-retro.md`
 
 ---
 
@@ -118,8 +133,10 @@
 | Fase 2: Solutioning | ✅ Complete | 100% |
 | Fase 3: Sprint Planning | ✅ Complete | 100% |
 | Fase 4: Epic 1 | ✅ Complete | 100% (8/8 stories) |
-| Fase 4: Epic 2 | 🔄 Ready | 0% (tech context done) |
-| Fase 4: Epics 3-5 | ⏳ Backlog | 0% |
+| Fase 4: Epic 2 | ✅ Complete | 100% (6/6 stories) |
+| Fase 4: Epic 3 | ✅ Complete | 100% (8/8 stories) |
+| Fase 4: Epic 4 | ⏳ Backlog | 0% |
+| Fase 4: Epic 5 | ✅ Complete | 100% (6/7 stories, 1 skipped) |
 
 ---
 
@@ -131,9 +148,9 @@
   - Per Epic 1 retrospective: "Testing infrastructure code is more valuable once features exist"
 
 ### Next Steps
-1. Run `/bmad:bmm:workflows:create-story` for Story 2.1
-2. Implement Epic 2 stories (authentication)
-3. Consider TEA workflow after Epic 2
+1. Consider implementing Epic 4 (Flash Message System)
+2. Consider TEA workflow for test coverage
+3. Production hardening and monitoring
 
 ---
 

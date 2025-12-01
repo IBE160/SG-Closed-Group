@@ -11,8 +11,8 @@ import {
   generateClientId,
 } from "@/lib/sse";
 
-// Use edge runtime for better SSE support (longer timeout, lower latency)
-export const runtime = "edge";
+// Note: Using Node.js runtime (not Edge) so SSE clients Map is shared with API routes
+// Edge runtime would have separate memory context, breaking broadcast functionality
 
 // Disable caching for SSE
 export const dynamic = "force-dynamic";

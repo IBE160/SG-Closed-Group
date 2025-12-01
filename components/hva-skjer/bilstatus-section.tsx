@@ -38,7 +38,7 @@ function BilstatusSectionComponent() {
     existingNote: null,
   });
 
-  // Fetch bilstatus from API (initial load only)
+  // Fetch bilstatus from API (initial load only - SSE handles updates)
   const fetchBilstatus = useCallback(async () => {
     try {
       const response = await fetch("/api/bilstatus");

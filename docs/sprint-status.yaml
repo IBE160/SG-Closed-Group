@@ -61,21 +61,21 @@ development_status:
   # NOTE: Story 3.6/3.7 restructured (correct-course 2025-11-27)
   # - Vaktplan changed from generic positions to fixed fields (Vakt09, Lederstøtte)
   # - New Story 3.8 added for Talegrupper feature
-  epic-3: contexted
+  epic-3: done  # All 8 stories complete
   3-1-event-management-create-and-list-events: done
   3-2-event-management-edit-and-delete-events: done
   3-3-priority-system-and-filtering: done
   3-4-bilstatus-vehicle-rotation-status-display-and-toggle: done
   3-5-bilstatus-grey-status-with-notes: done
-  3-6-vaktplan-duty-roster-display: in-progress  # Reimplementing with fixed fields
-  3-7-vaktplan-administrator-editing: in-progress  # Reimplementing with fixed fields
-  3-8-talegrupper-radio-talk-groups: drafted  # NEW - Talegrupper feature
+  3-6-vaktplan-duty-roster-display: done  # Fixed fields implementation complete
+  3-7-vaktplan-administrator-editing: done  # Fixed fields implementation complete
+  3-8-talegrupper-radio-talk-groups: done  # Full CRUD + SSE + audit
   epic-3-retrospective: optional
 
   # Epic 4: Flash Message System
-  epic-4: backlog
-  4-1-flash-message-basic-send-and-receive: backlog
-  4-2-blink-animation-and-acknowledgment: backlog
+  epic-4: contexted  # Tech spec created 2025-11-30
+  4-1-flash-message-basic-send-and-receive: done
+  4-2-blink-animation-and-acknowledgment: review
   4-3-smart-typing-detection-and-auto-switch: backlog
   4-4-message-history-and-multiple-messages: backlog
   4-5-auto-return-timer-and-flash-folder-ui: backlog

@@ -17,6 +17,7 @@ import { useEventsStore, type Event } from "@/stores/useEventsStore";
 import { useBilstatusStore, type BilstatusData } from "@/stores/useBilstatusStore";
 import { useTalegrupperStore, type Talegruppe } from "@/stores/useTalegrupperStore";
 import { useVaktplanStore } from "@/stores/useVaktplanStore";
+import { useFlashStore } from "@/stores/useFlashStore";
 import type { SSEEvent } from "@/lib/sse";
 
 interface SSEProviderProps {
@@ -40,6 +41,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const bilstatusStore = useBilstatusStore;
   const talegrupperStore = useTalegrupperStore;
   const vaktplanStore = useVaktplanStore;
+  const flashStore = useFlashStore;
 
   /**
    * Handle incoming SSE events and dispatch to appropriate stores
@@ -109,6 +111,8 @@ export function SSEProvider({ children }: SSEProviderProps) {
               vakt09Name?: string | null;
               lederstotteName?: string | null;
               lederstottePhone?: string | null;
+              updatedByName?: string | null;
+              updatedAt?: string | null;
             };
             vaktplanStore.getState().updateVaktplanFromSSE(data);
           }
@@ -121,8 +125,20 @@ export function SSEProvider({ children }: SSEProviderProps) {
           break;
 
         case "flash_message":
-          // Flash messages can be handled by a dedicated flash message system
-          console.info("[SSE] Flash message:", event.data);
+          // Add message to flash store
+          if (event.data && typeof event.data === "object") {
+            const flashData = event.data as { id: string; content: string; senderName?: string | null; createdAt: string };
+            flashStore.getState().addMessage({
+              id: flashData.id,
+              content: flashData.content,
+              senderName: flashData.senderName,
+              createdAt: flashData.createdAt,
+            });
+          }
+          console.info("[SSE]", "Flash message received", {
+            data: event.data,
+            timestamp: event.timestamp,
+          });
           break;
 
         case "test_broadcast":
@@ -133,7 +149,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
           console.warn("[SSE] Unknown event type:", event.type);
       }
     },
-    [setLastEventAt, setLastHeartbeatAt, setClientId, eventsStore, bilstatusStore, talegrupperStore, vaktplanStore]
+    [setLastEventAt, setLastHeartbeatAt, setClientId, eventsStore, bilstatusStore, talegrupperStore, vaktplanStore, flashStore]
   );
 
   /**

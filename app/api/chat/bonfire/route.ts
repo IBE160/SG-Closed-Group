@@ -119,7 +119,8 @@ const validateAddressTool = tool({
     address: z.string().describe('Adressen, stedsnavnet eller landemerket som skal valideres (f.eks. "Kirkegata 12, Stavanger", "Stavanger domkirke", "Hinna sentrum")'),
   }),
   execute: async ({ address }) => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    // Use server-side API key (no referrer restrictions) or fall back to public key
+    const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
 
     if (!apiKey) {
       return {

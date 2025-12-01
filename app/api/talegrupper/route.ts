@@ -2,8 +2,10 @@
  * Talegrupper API - Radio Talk Group Management
  * Story 3.8: Talegrupper (Radio Talk Groups)
  *
+ * UPDATED 2025-11-30: All users can edit (not just admin)
+ *
  * GET /api/talegrupper - Fetch all talegrupper
- * POST /api/talegrupper - Create new talegruppe (admin only)
+ * POST /api/talegrupper - Create new talegruppe (all logged-in users)
  */
 
 import { NextResponse } from "next/server";
@@ -52,7 +54,7 @@ export async function GET() {
 
 /**
  * POST /api/talegrupper
- * Create a new talegruppe (admin only)
+ * Create a new talegruppe (all logged-in users)
  *
  * Request body:
  * - name: Talegruppe name (e.g., "Skogbrann-01")
@@ -68,24 +70,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Check administrator role
-    if (session.user.role !== "ADMINISTRATOR") {
-      return NextResponse.json(
-        { success: false, error: { message: "Kun administratorer kan legge til talegrupper", code: "FORBIDDEN" } },
-        { status: 403 }
-      );
-    }
+    // All logged-in users can create talegrupper (not admin-only)
 
     const body = await request.json();
     const validated = createTalegruppeSchema.parse(body);
     const { name, details } = validated;
+
+    // Get user display name
+    const userName = session.user.name ?? session.user.email ?? "Ukjent";
 
     // Create talegruppe with audit context
     const talegruppe = await runWithAuditContext(
       { id: session.user.id, email: session.user.email ?? "unknown" },
       async () => {
         return await prisma.talegruppe.create({
-          data: { name, details },
+          data: {
+            name,
+            details,
+            createdBy: session.user.id,
+            createdByName: userName,
+            updatedBy: session.user.id,
+            updatedByName: userName,
+          },
         });
       }
     );
@@ -97,6 +103,7 @@ export async function POST(request: Request) {
       id: talegruppe.id,
       name: talegruppe.name,
       createdBy: session.user.id,
+      createdByName: userName,
       timestamp: new Date().toISOString(),
     });
 

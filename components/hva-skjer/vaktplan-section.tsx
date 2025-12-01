@@ -26,9 +26,11 @@ import { useVaktplanStore } from "@/stores/useVaktplanStore";
  *
  * OPTIMIZED: Uses centralized Zustand store for SSE updates.
  * NO local EventSource - SSEProvider handles all SSE connections.
+ *
+ * All logged-in users can edit (not just admin)
  */
 function VaktplanSectionComponent() {
-  const { data: session } = useSession();
+  useSession(); // Keep session for auth check
 
   // Use centralized store for vaktplan data
   const vaktplan = useVaktplanStore((state) => state.vaktplan);
@@ -52,8 +54,6 @@ function VaktplanSectionComponent() {
   const [editVakt09Name, setEditVakt09Name] = useState("");
   const [editLederstotteName, setEditLederstotteName] = useState("");
   const [editLederstottePhone, setEditLederstottePhone] = useState("");
-
-  const isAdmin = session?.user?.role === "ADMINISTRATOR";
 
   // Update store with current week/year for SSE filtering
   useEffect(() => {
@@ -219,17 +219,15 @@ function VaktplanSectionComponent() {
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              {isAdmin && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 ml-1"
-                  onClick={openEditDialog}
-                  title="Rediger vaktplan"
-                >
-                  <Pencil className="h-4 w-4" />
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 ml-1"
+                onClick={openEditDialog}
+                title="Rediger vaktplan"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
@@ -237,14 +235,12 @@ function VaktplanSectionComponent() {
           {!hasData ? (
             <div className="text-center text-muted-foreground text-sm">
               Ingen vaktplan registrert for denne uken
-              {isAdmin && (
-                <div className="mt-2">
-                  <Button variant="outline" size="sm" onClick={openEditDialog}>
-                    <Pencil className="h-4 w-4 mr-1" />
-                    Legg til
-                  </Button>
-                </div>
-              )}
+              <div className="mt-2">
+                <Button variant="outline" size="sm" onClick={openEditDialog}>
+                  <Pencil className="h-4 w-4 mr-1" />
+                  Legg til
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-3">
@@ -273,6 +269,16 @@ function VaktplanSectionComponent() {
                   </div>
                 )}
               </div>
+
+              {/* Updated by info */}
+              {vaktplan?.updatedByName && (
+                <div className="border-t pt-2 mt-3 text-xs text-muted-foreground">
+                  Sist oppdatert av {vaktplan.updatedByName}
+                  {vaktplan.updatedAt && (
+                    <span> - {new Date(vaktplan.updatedAt).toLocaleString("nb-NO")}</span>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </CardContent>

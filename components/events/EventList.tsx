@@ -36,7 +36,7 @@ function EventListComponent({ className, refreshTrigger, priorityFilter = "ALL" 
       : events;
   }, [events, priorityFilter]);
 
-  // Fetch events from API (initial load only)
+  // Fetch events from API (initial load only - SSE handles updates)
   const fetchEvents = useCallback(async () => {
     try {
       const response = await fetch("/api/events");
