@@ -52,10 +52,15 @@ function EventListComponent({ className, refreshTrigger, priorityFilter = "ALL" 
     }
   }, [setEvents, setStoreError]);
 
-  // Initial fetch - SSE handles updates
+  // Initial fetch + polling fallback (SSE doesn't work reliably on Vercel)
   useEffect(() => {
     setStoreLoading(true);
     fetchEvents();
+
+    // Polling fallback every 2 seconds
+    const pollingInterval = setInterval(fetchEvents, 2000);
+
+    return () => clearInterval(pollingInterval);
   }, [fetchEvents, setStoreLoading]);
 
   // Refetch when refreshTrigger changes (manual refresh from parent)

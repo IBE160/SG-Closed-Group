@@ -54,10 +54,15 @@ function BilstatusSectionComponent() {
     }
   }, [setBilstatus, setStoreError]);
 
-  // Initial fetch only - SSE handles updates
+  // Initial fetch + polling fallback (SSE doesn't work reliably on Vercel)
   useEffect(() => {
     setStoreLoading(true);
     fetchBilstatus();
+
+    // Polling fallback every 2 seconds
+    const pollingInterval = setInterval(fetchBilstatus, 2000);
+
+    return () => clearInterval(pollingInterval);
   }, [fetchBilstatus, setStoreLoading]);
 
   // Toggle vehicle status
