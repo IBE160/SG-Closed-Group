@@ -17,6 +17,7 @@ import { persist } from "zustand/middleware";
 export interface FlashMessage {
   id: string;
   content: string;
+  senderName?: string | null;
   createdAt: string;
 }
 

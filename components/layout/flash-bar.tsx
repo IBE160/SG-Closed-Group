@@ -68,7 +68,7 @@ export function FlashBar() {
           const newMessages = result.data.filter((m: { id: string }) => !currentIds.includes(m.id));
 
           // Add new messages (will trigger blink)
-          newMessages.forEach((msg: { id: string; content: string; createdAt: string }) => {
+          newMessages.forEach((msg: { id: string; content: string; senderName?: string | null; createdAt: string }) => {
             addMessage(msg);
           });
         }
@@ -113,6 +113,7 @@ export function FlashBar() {
           addMessage({
             id: messageId,
             content: result.data.content,
+            senderName: result.data.senderName,
             createdAt: result.data.createdAt,
           });
           // Auto-acknowledge own message so sender doesn't see blink
@@ -296,6 +297,9 @@ export function FlashBar() {
               {currentMessage.content}
             </span>
             <span className="ml-3 text-xs text-muted-foreground whitespace-nowrap">
+              {currentMessage.senderName && (
+                <span className="font-medium">{currentMessage.senderName} · </span>
+              )}
               {formatTime(currentMessage.createdAt)}
             </span>
           </div>

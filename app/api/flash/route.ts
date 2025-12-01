@@ -58,6 +58,7 @@ export async function GET(request: Request) {
       select: {
         id: true,
         content: true,
+        senderName: true,
         createdAt: true,
         expiresAt: true,
       },
@@ -116,6 +117,9 @@ export async function POST(request: Request) {
     // Calculate expiration (24 hours from now)
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+    // Get sender name from session
+    const senderName = session.user.name || session.user.email?.split("@")[0] || "Ukjent";
+
     // Create flash message with audit context
     const message = await runWithAuditContext(
       { id: session.user.id, email: session.user.email ?? "unknown" },
@@ -124,6 +128,7 @@ export async function POST(request: Request) {
           data: {
             content,
             createdBy: session.user.id,
+            senderName,
             expiresAt,
           },
         });
@@ -134,6 +139,7 @@ export async function POST(request: Request) {
     broadcastSSE("flash_message", {
       id: message.id,
       content: message.content,
+      senderName: message.senderName,
       createdAt: message.createdAt.toISOString(),
     });
 
@@ -149,6 +155,7 @@ export async function POST(request: Request) {
       data: {
         id: message.id,
         content: message.content,
+        senderName: message.senderName,
         createdAt: message.createdAt.toISOString(),
         expiresAt: message.expiresAt.toISOString(),
       },

@@ -100,11 +100,12 @@ model Event {
 
 // FlashMessage Model - Urgent dispatcher communication (Epic 4)
 model FlashMessage {
-  id        String   @id @default(uuid())
-  content   String   @db.VarChar(100)
-  createdBy String
-  createdAt DateTime @default(now())
-  expiresAt DateTime // Auto-archive after 24 hours
+  id         String   @id @default(uuid())
+  content    String   @db.VarChar(100)
+  createdBy  String
+  senderName String?  @db.VarChar(100) // Display name of sender
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime // Auto-archive after 24 hours
 
   @@index([createdAt])
 }
