@@ -139,10 +139,16 @@ Når bruker oppgir et sted, KALL validateAddress MED EN GANG!
 
 Verktøyet svarer med:
 - success=true, isWithinArea=true → Stedet er GODKJENT! Fortell brukeren den verifiserte adressen og gå videre til telefonnummer.
+- success=true, needsMoreDetail=true → Stedet er i riktig område, men FOR VAGT. Be om mer spesifikk adresse (gatenavn, husnummer, eller nærliggende landemerke).
 - success=false, isWithinArea=false → Stedet er UTENFOR vårt område. Forklar vennlig at de må kontakte sin lokale brannstasjon.
 - success=false (uten isWithinArea) → Teknisk feil eller fant ikke stedet. Be om mer spesifikk adresse.
 
-IKKE overstyr verktøyet! Hvis det sier success=true, er adressen godkjent.
+VIKTIG OM PRESISJON: Brannvesenet trenger å vite NØYAKTIG hvor bålet skal brennes!
+- "Tau" eller "Sandnes" er IKKE nok - det dekker et helt tettsted/kommune
+- Godkjente adresser: "Ryfylkevegen 42, Tau", "Ved fotballbanen på Tau", "Bak Tau kirke"
+- Hvis bruker bare oppgir stedsnavn, spør: "Kan du være mer presis? F.eks. gateadresse, nærliggende landemerke, eller beskrivelse av stedet?"
+
+IKKE overstyr verktøyet! Hvis det sier needsMoreDetail=true, MÅ du be om mer spesifikk adresse.
 
 ## VÅRT DEKNINGSOMRÅDE (29 kommuner)
 Rogaland: Stavanger, Sandnes, Sola, Randaberg, Strand, Gjesdal, Klepp, Time, Hå, Eigersund, Sokndal, Lund, Bjerkreim, Hjelmeland, Suldal, Sauda, Kvitsøy, Bokn, Tysvær, Karmøy, Haugesund, Vindafjord, Utsira
@@ -328,6 +334,31 @@ const validateAddressTool = tool({
       const finalAddress = placeName && !formattedAddress.toLowerCase().includes(placeName.toLowerCase())
         ? `${placeName}, ${formattedAddress}`
         : formattedAddress
+
+      // Sjekk om adressen er for vag (bare postnummer/stedsnavn uten gatenavn eller landemerke)
+      // En adresse er for vag hvis:
+      // 1. Den bare inneholder postnummer + stedsnavn (f.eks. "4120 Tau, Norge")
+      // 2. Ingen gatenavn eller husnummer
+      // 3. Ikke et spesifikt landemerke (placeName)
+      const isVagueAddress = !placeName && (
+        // Matcher "1234 Stedsnavn" eller "1234 Stedsnavn, Norge"
+        /^\d{4}\s+[A-Za-zÆØÅæøå]+(\s*,\s*(Norge|Norway))?$/i.test(formattedAddress.trim()) ||
+        // Matcher bare stedsnavn uten nummer
+        !/\d/.test(formattedAddress.split(',')[0])
+      )
+
+      console.log('🔍 Vag adresse-sjekk:', { formattedAddress, placeName, isVagueAddress })
+
+      if (isVagueAddress) {
+        return {
+          success: true, // Stedet er gyldig, men for vagt
+          isWithinArea: true,
+          needsMoreDetail: true,
+          formattedAddress: finalAddress,
+          municipality: kommune,
+          message: `${finalAddress} er i vårt dekningsområde, men adressen er for upresis. Brannvesenet trenger å vite nøyaktig hvor bålet skal brennes. Kan du oppgi gateadresse, husnummer, eller et nærliggende landemerke?`
+        }
+      }
 
       console.log('✅ Sted validert:', finalAddress, kommune, location.lat, location.lng)
 
