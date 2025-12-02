@@ -71,13 +71,40 @@ function calculateExpiryDate(tilDate: string | null | undefined): Date {
 }
 
 /**
- * Sjekker om en bålmelding er utløpt.
- * Sammenligner nåværende tid mot expiryDate.
+ * Beregner kl. 04:00 i dag (norsk tid).
+ * Brukes for å filtrere ut gamle bålmeldinger fra kartet.
+ */
+function getTodaysCutoffTime(): Date {
+  const now = new Date();
+  const cutoff = new Date(now);
+
+  // Sett til kl. 04:00 i dag
+  cutoff.setHours(4, 0, 0, 0);
+
+  // Hvis klokken er før 04:00, bruk gårsdagens 04:00
+  if (now < cutoff) {
+    cutoff.setDate(cutoff.getDate() - 1);
+  }
+
+  return cutoff;
+}
+
+/**
+ * Sjekker om en bålmelding skal vises på kartet.
+ * En bålmelding er "utløpt" (skal ikke vises) hvis:
+ * 1. Nåværende tid er etter expiryDate, ELLER
+ * 2. Bålmeldingen ble opprettet FØR kl. 04:00 i dag
+ *
+ * Dette sikrer at kartet ryddes hver natt kl. 04:00.
  */
 export function isBonfireExpired(entity: BonfireEntity): boolean {
   const now = new Date();
   const expiryDate = new Date(entity.expiryDate);
-  return now > expiryDate;
+  const createdAt = new Date(entity.timestamp);
+  const todaysCutoff = getTodaysCutoffTime();
+
+  // Utløpt hvis: passert expiryDate ELLER opprettet før dagens 04:00
+  return now > expiryDate || createdAt < todaysCutoff;
 }
 
 export async function createBonfireInAzure(data: Omit<BonfireEntity, 'partitionKey' | 'rowKey' | 'timestamp' | 'expiryDate' | 'status' | 'godkjent'>): Promise<string> {
@@ -148,35 +175,6 @@ export async function approveBonfire(rowKey: string): Promise<void> {
 
 export async function rejectBonfire(rowKey: string): Promise<void> {
   await deleteBonfireFromAzure(rowKey);
-}
-
-/**
- * Sletter ALLE bålmeldinger fra Azure Table Storage.
- * Brukes av nattlig oppryddingsjobb kl. 04:00 for å rydde kartet.
- * Returnerer antall slettede meldinger.
- */
-export async function deleteAllBonfiresFromAzure(): Promise<number> {
-  const client = getTableClient();
-  let deletedCount = 0;
-
-  // Hent alle bålmeldinger (inkludert utløpte)
-  const entitiesIter = client.listEntities<BonfireEntity>({
-    queryOptions: { filter: `PartitionKey eq 'innmeldinger'` }
-  });
-
-  // Slett hver enkelt
-  for await (const entity of entitiesIter) {
-    try {
-      await client.deleteEntity('innmeldinger', entity.rowKey);
-      deletedCount++;
-      console.log(`🗑️ Slettet bålmelding: ${entity.rowKey} (${entity.adresse})`);
-    } catch (error) {
-      console.error(`Feil ved sletting av ${entity.rowKey}:`, error);
-    }
-  }
-
-  console.log(`✅ Nattlig opprydding fullført: ${deletedCount} bålmeldinger slettet`);
-  return deletedCount;
 }
 
 export async function getPendingBonfires(): Promise<BonfireEntity[]> {
