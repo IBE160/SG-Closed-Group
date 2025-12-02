@@ -195,6 +195,7 @@ function BonfireMarkers({ bonfires }: { bonfires: BonfireNotification[] }) {
  * MapSearchBox - Søkefelt med Google Places Autocomplete
  * Lar brukeren søke etter steder og panorere kartet dit
  * Viser områdegrenser med stiplet linje (som Google Maps)
+ * Viser alltid en markør på søkeresultatet
  */
 function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null) => void }) {
   const map = useMap()
@@ -203,6 +204,7 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
   const [searchValue, setSearchValue] = useState('')
   const [isInitialized, setIsInitialized] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const searchMarkerRef = useRef<google.maps.Marker | null>(null)
 
   // Initialiser Google Places Autocomplete
   useEffect(() => {
@@ -244,19 +246,30 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
           // Oppdater søkefeltet med valgt sted
           setSearchValue(place.formatted_address || place.name || '')
 
-          // Send place_id til parent for å tegne områdegrense
-          if (onAreaSelect && place.place_id) {
-            // Sjekk om dette er et område (locality, sublocality, neighborhood, etc.)
-            const areaTypes = ['locality', 'sublocality', 'neighborhood', 'postal_town',
-                             'administrative_area_level_1', 'administrative_area_level_2',
-                             'administrative_area_level_3', 'colloquial_area']
-            const isArea = place.types?.some(type => areaTypes.includes(type))
+          // Fjern eksisterende søkemarkør
+          if (searchMarkerRef.current) {
+            searchMarkerRef.current.setMap(null)
+          }
 
-            if (isArea) {
-              onAreaSelect(place.place_id)
-            } else {
-              onAreaSelect(null) // Fjern eksisterende grense for ikke-områder
-            }
+          // Legg til ny søkemarkør på valgt sted
+          searchMarkerRef.current = new google.maps.Marker({
+            position: location,
+            map,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 10,
+              fillColor: '#4285F4',
+              fillOpacity: 1,
+              strokeColor: '#FFFFFF',
+              strokeWeight: 3
+            },
+            title: place.formatted_address || place.name || 'Søkeresultat',
+            zIndex: 1000 // Over andre markører
+          })
+
+          // Send place_id til parent for å tegne områdegrense for alle stedtyper
+          if (onAreaSelect && place.place_id) {
+            onAreaSelect(place.place_id)
           }
         } else {
           console.warn('⚠️ No geometry found for place:', place.name)
@@ -266,9 +279,13 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
       setIsInitialized(true)
 
       return () => {
-        // Cleanup - fjern listener
+        // Cleanup - fjern listener og søkemarkør
         if (autocompleteInstance) {
           google.maps.event.clearInstanceListeners(autocompleteInstance)
+        }
+        if (searchMarkerRef.current) {
+          searchMarkerRef.current.setMap(null)
+          searchMarkerRef.current = null
         }
       }
     } catch (err) {
@@ -283,6 +300,11 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
     if (inputRef.current) {
       inputRef.current.value = ''
       inputRef.current.focus()
+    }
+    // Fjern søkemarkør når søket tømmes
+    if (searchMarkerRef.current) {
+      searchMarkerRef.current.setMap(null)
+      searchMarkerRef.current = null
     }
     // Fjern områdegrense når søket tømmes
     if (onAreaSelect) {
