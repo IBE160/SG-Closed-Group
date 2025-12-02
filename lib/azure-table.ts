@@ -71,13 +71,40 @@ function calculateExpiryDate(tilDate: string | null | undefined): Date {
 }
 
 /**
- * Sjekker om en bålmelding er utløpt.
- * Sammenligner nåværende tid mot expiryDate.
+ * Beregner kl. 04:00 i dag (norsk tid).
+ * Brukes for å filtrere ut gamle bålmeldinger fra kartet.
+ */
+function getTodaysCutoffTime(): Date {
+  const now = new Date();
+  const cutoff = new Date(now);
+
+  // Sett til kl. 04:00 i dag
+  cutoff.setHours(4, 0, 0, 0);
+
+  // Hvis klokken er før 04:00, bruk gårsdagens 04:00
+  if (now < cutoff) {
+    cutoff.setDate(cutoff.getDate() - 1);
+  }
+
+  return cutoff;
+}
+
+/**
+ * Sjekker om en bålmelding skal vises på kartet.
+ * En bålmelding er "utløpt" (skal ikke vises) hvis:
+ * 1. Nåværende tid er etter expiryDate, ELLER
+ * 2. Bålmeldingen ble opprettet FØR kl. 04:00 i dag
+ *
+ * Dette sikrer at kartet ryddes hver natt kl. 04:00.
  */
 export function isBonfireExpired(entity: BonfireEntity): boolean {
   const now = new Date();
   const expiryDate = new Date(entity.expiryDate);
-  return now > expiryDate;
+  const createdAt = new Date(entity.timestamp);
+  const todaysCutoff = getTodaysCutoffTime();
+
+  // Utløpt hvis: passert expiryDate ELLER opprettet før dagens 04:00
+  return now > expiryDate || createdAt < todaysCutoff;
 }
 
 export async function createBonfireInAzure(data: Omit<BonfireEntity, 'partitionKey' | 'rowKey' | 'timestamp' | 'expiryDate' | 'status' | 'godkjent'>): Promise<string> {
