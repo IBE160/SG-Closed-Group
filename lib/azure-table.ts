@@ -150,6 +150,35 @@ export async function rejectBonfire(rowKey: string): Promise<void> {
   await deleteBonfireFromAzure(rowKey);
 }
 
+/**
+ * Sletter ALLE bålmeldinger fra Azure Table Storage.
+ * Brukes av nattlig oppryddingsjobb kl. 04:00 for å rydde kartet.
+ * Returnerer antall slettede meldinger.
+ */
+export async function deleteAllBonfiresFromAzure(): Promise<number> {
+  const client = getTableClient();
+  let deletedCount = 0;
+
+  // Hent alle bålmeldinger (inkludert utløpte)
+  const entitiesIter = client.listEntities<BonfireEntity>({
+    queryOptions: { filter: `PartitionKey eq 'innmeldinger'` }
+  });
+
+  // Slett hver enkelt
+  for await (const entity of entitiesIter) {
+    try {
+      await client.deleteEntity('innmeldinger', entity.rowKey);
+      deletedCount++;
+      console.log(`🗑️ Slettet bålmelding: ${entity.rowKey} (${entity.adresse})`);
+    } catch (error) {
+      console.error(`Feil ved sletting av ${entity.rowKey}:`, error);
+    }
+  }
+
+  console.log(`✅ Nattlig opprydding fullført: ${deletedCount} bålmeldinger slettet`);
+  return deletedCount;
+}
+
 export async function getPendingBonfires(): Promise<BonfireEntity[]> {
   const client = getTableClient();
   const entities: BonfireEntity[] = [];
