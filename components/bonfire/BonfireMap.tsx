@@ -361,7 +361,6 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
 function AreaBoundary({ placeId }: { placeId: string | null }) {
   const map = useMap()
   const polylineRef = useRef<google.maps.Polyline | null>(null)
-  const markerRef = useRef<google.maps.Marker | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const featureLayerRef = useRef<any>(null)
   const previousPlaceIdRef = useRef<string | null>(null)
@@ -369,14 +368,10 @@ function AreaBoundary({ placeId }: { placeId: string | null }) {
   useEffect(() => {
     if (!map) return
 
-    // Fjern eksisterende polyline og markør (fallback)
+    // Fjern eksisterende polyline (fallback grense)
     if (polylineRef.current) {
       polylineRef.current.setMap(null)
       polylineRef.current = null
-    }
-    if (markerRef.current) {
-      markerRef.current.setMap(null)
-      markerRef.current = null
     }
 
     // Reset feature layer styling hvis placeId endres
@@ -391,13 +386,14 @@ function AreaBoundary({ placeId }: { placeId: string | null }) {
 
     if (!placeId) return
 
-    // Prøv Data-driven styling først (krever Map ID med Feature Layers aktivert)
+    // Prøv Data-driven styling (krever Map ID med Feature Layers aktivert)
+    // Men tegn alltid fallback-grense i tillegg for synlighet
     try {
       // @ts-expect-error - getFeatureLayer er en ny API som ikke er i typene ennå
       const localityLayer = map.getFeatureLayer('LOCALITY')
 
       if (localityLayer) {
-        console.log('🗺️ Using Data-driven styling for boundary')
+        console.log('🗺️ Applying Data-driven styling for boundary')
         featureLayerRef.current = localityLayer
 
         // Style kun det valgte området
@@ -414,13 +410,13 @@ function AreaBoundary({ placeId }: { placeId: string | null }) {
           }
           return null // Ingen styling for andre områder
         }
-        return
+        // Fortsett til fallback for å sikre synlig grense
       }
     } catch (e) {
-      console.log('Feature Layers not available, using fallback:', e)
+      console.log('Feature Layers not available:', e)
     }
 
-    // Fallback: Bruk viewport-basert firkant
+    // Tegn alltid viewport-basert firkant som synlig grense
     const geocoder = new google.maps.Geocoder()
     geocoder.geocode({ placeId }, (results, status) => {
       if (status === 'OK' && results && results[0]) {
@@ -457,21 +453,7 @@ function AreaBoundary({ placeId }: { placeId: string | null }) {
             }],
             map
           })
-
-          const center = result.geometry.location
-          markerRef.current = new google.maps.Marker({
-            position: center,
-            map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: '#FFFFFF',
-              fillOpacity: 0.9,
-              strokeColor: '#E53935',
-              strokeWeight: 2
-            },
-            title: result.formatted_address
-          })
+          console.log('📍 Drew boundary rectangle for:', result.formatted_address)
         }
       }
     })
@@ -479,9 +461,6 @@ function AreaBoundary({ placeId }: { placeId: string | null }) {
     return () => {
       if (polylineRef.current) {
         polylineRef.current.setMap(null)
-      }
-      if (markerRef.current) {
-        markerRef.current.setMap(null)
       }
       if (featureLayerRef.current) {
         try {
