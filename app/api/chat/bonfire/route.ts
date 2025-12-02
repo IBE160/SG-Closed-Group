@@ -63,17 +63,49 @@ function getCurrentNorwayTime() {
 
 // Godkjente kommuner for 110 Sør-Vest (29 kommuner totalt)
 // Kilde: https://www.rogbr.no/110-sor-vest/kommuner
+// Alle kommunenavn i lowercase for enklere matching
 const GODKJENTE_KOMMUNER = [
   // Rogaland (23 kommuner)
-  'Stavanger', 'Sandnes', 'Sola', 'Randaberg', 'Strand', 'Gjesdal',
-  'Klepp', 'Time', 'Hå', 'Eigersund', 'Sokndal', 'Lund', 'Bjerkreim',
-  'Hjelmeland', 'Suldal', 'Sauda', 'Kvitsøy', 'Bokn', 'Tysvær',
-  'Karmøy', 'Haugesund', 'Vindafjord', 'Utsira',
+  'stavanger', 'sandnes', 'sola', 'randaberg', 'strand', 'gjesdal',
+  'klepp', 'time', 'hå', 'eigersund', 'sokndal', 'lund', 'bjerkreim',
+  'hjelmeland', 'suldal', 'sauda', 'kvitsøy', 'bokn', 'tysvær',
+  'karmøy', 'haugesund', 'vindafjord', 'utsira',
   // Vestland - Sunnhordland (5 kommuner som tilhører 110 Sør-Vest)
-  'Bømlo', 'Stord', 'Fitjar', 'Sveio', 'Etne',
+  'bømlo', 'stord', 'fitjar', 'sveio', 'etne',
   // Agder (1 kommune)
-  'Sirdal'
+  'sirdal',
+  // Alternative stavemåter og tettsteder som Google Maps kan returnere
+  'rennesøy', 'finnøy', 'forsand', // Sammenslått med Stavanger/Sandnes/Strand
+  'ølen', // Tettsted i Vindafjord
+  'skudeneshavn', 'åkrehamn', 'kopervik', // Tettsteder i Karmøy
+  'jørpeland', // Tettsted i Strand
+  'tau', // Tettsted i Strand
+  'bryne', // Tettsted i Time
+  'nærbø', 'varhaug', // Tettsteder i Hå
+  'ålgård', // Tettsted i Gjesdal
+  'kleppe', // Tettsted i Klepp
+  'tananger', // Tettsted i Sola
+  'hommersåk', // Tettsted i Sandnes
+  'leirvik', // Tettsted i Stord
+  'sagvåg', // Tettsted i Stord
+  'bremnes', // Tettsted i Bømlo
+  'rubbestadneset', // Tettsted i Bømlo
+  'skånevik', // Tettsted i Etne
+  'aksdal', // Tettsted i Tysvær
+  'nedstrand', // Tettsted i Tysvær
+  'vikedal', // Tettsted i Vindafjord
+  'sand', // Tettsted i Suldal
+  'jelsa', // Tettsted i Suldal
+  'egersund', // Alternativ skrivemåte
 ]
+
+// Funksjon for å sjekke om kommune er godkjent (case-insensitive)
+function isKommuneGodkjent(kommune: string): boolean {
+  const normalized = kommune.toLowerCase().trim()
+    .replace(' kommune', '') // Fjern "kommune" suffiks
+    .replace(' municipality', '') // Fjern engelsk suffiks
+  return GODKJENTE_KOMMUNER.includes(normalized)
+}
 
 const SYSTEM_PROMPT = `Du er en vennlig assistent for 110 Sør-Vest sin bålmeldingstjeneste.
 
@@ -271,8 +303,16 @@ const validateAddressTool = tool({
         }
       }
 
-      const isValidLocation = (fylke === 'Rogaland' || fylke === 'Vestland' || fylke === 'Agder') &&
-                              kommune && GODKJENTE_KOMMUNER.includes(kommune)
+      // Sjekk om stedet er innenfor dekningsområdet
+      // Godkjent hvis: riktig fylke OG (kommune er godkjent ELLER vi er i Rogaland)
+      const isInCorrectCounty = fylke === 'Rogaland' || fylke === 'Vestland' || fylke === 'Agder'
+      const isKommuneValid = kommune && isKommuneGodkjent(kommune)
+
+      // Spesialhåndtering: Hvis vi er i Rogaland, godkjenn alle steder
+      // (dekker tilfeller der Google ikke returnerer riktig kommune)
+      const isValidLocation = isInCorrectCounty && (isKommuneValid || fylke === 'Rogaland')
+
+      console.log('🔍 Validering:', { fylke, kommune, isInCorrectCounty, isKommuneValid, isValidLocation })
 
       if (!isValidLocation) {
         return {
