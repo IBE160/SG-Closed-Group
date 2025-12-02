@@ -55,7 +55,7 @@ development_status:
   2-4-protected-routes-and-api-endpoints: done
   2-5-login-page-and-user-profile-ui: done
   2-6-session-management-and-security-hardening: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done  # docs/sprint-artifacts/epic-2-retro-2025-12-02.md
 
   # Epic 3: Event Control Dashboard
   # NOTE: Story 3.6/3.7 restructured (correct-course 2025-11-27)
@@ -70,7 +70,7 @@ development_status:
   3-6-vaktplan-duty-roster-display: done  # Fixed fields implementation complete
   3-7-vaktplan-administrator-editing: done  # Fixed fields implementation complete
   3-8-talegrupper-radio-talk-groups: done  # Full CRUD + SSE + audit
-  epic-3-retrospective: optional
+  epic-3-retrospective: done  # docs/sprint-artifacts/epic-3-retro-2025-12-02.md
 
   # Epic 4: Flash Message System
   # COMPLETE: Full-screen 20-sec flash, click-to-acknowledge, sender excluded
@@ -81,7 +81,7 @@ development_status:
   4-4-message-history-and-multiple-messages: done  # Arrow navigation between last 5 messages in FlashBar
   4-5-auto-return-timer-and-flash-folder-ui: skipped  # Not needed - FlashBar is always visible (no separate folder)
   4-6-flash-message-performance-optimization: done  # 1-second polling implemented
-  epic-4-retrospective: optional
+  epic-4-retrospective: done  # docs/sprint-artifacts/epic-4-retro-2025-12-02.md
 
   # Epic 5: Bålmelding (Bonfire) Registration System
   # NOTE: Epic 5 uses Azure Table Storage (ADR-006) - separate from Prisma/PostgreSQL
