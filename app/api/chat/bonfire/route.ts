@@ -159,8 +159,7 @@ Agder: Sirdal
 Bruk EKSAKT disse verdiene fra validateAddress:
 - adresse: formattedAddress
 - kommune: municipality
-- latitude: latitude (tall, f.eks. 58.969976)
-- longitude: longitude (tall, f.eks. 5.733107)
+(Koordinater hentes automatisk - du trenger IKKE oppgi latitude/longitude)
 
 ## REGLER
 - Korte, tydelige svar på norsk
@@ -436,15 +435,13 @@ const validatePhoneNumberTool = tool({
 })
 
 const saveBonfireNotificationTool = tool({
-  description: 'Lagrer bålmeldingen til Azure. KRITISK: Du MÅ bruke EKSAKTE verdier fra validateAddress for adresse, kommune, latitude og longitude. Disse koordinatene bestemmer hvor flammen vises på kartet! ALLE felt unntatt beskrivelse er OBLIGATORISKE.',
+  description: 'Lagrer bålmeldingen til Azure. Koordinater hentes automatisk fra siste validerte adresse. Du trenger IKKE oppgi latitude/longitude - disse hentes fra cache.',
   inputSchema: z.object({
     navn: z.string().min(2).describe('Fullt navn på melder (OBLIGATORISK)'),
     telefon: z.string().describe('Telefonnummer (8 siffer, validert) (OBLIGATORISK)'),
     epost: z.string().email().describe('E-postadresse (OBLIGATORISK)'),
     adresse: z.string().describe('EKSAKT formattedAddress fra validateAddress - ALDRI brukerens tekst (OBLIGATORISK)'),
     kommune: z.string().describe('EKSAKT municipality fra validateAddress (OBLIGATORISK)'),
-    latitude: z.number().describe('EKSAKT latitude fra validateAddress (f.eks. 58.969976) (OBLIGATORISK)'),
-    longitude: z.number().describe('EKSAKT longitude fra validateAddress (f.eks. 5.733107) (OBLIGATORISK)'),
     balstorrelse: z.enum(['Liten', 'Middels', 'Stor']).describe('Størrelse på bålet (OBLIGATORISK)'),
     type: z.enum(['St. Hans', 'Hageavfall', 'Bygningsavfall', 'Annet']).describe('Type bål (OBLIGATORISK)'),
     fra: z.string().describe('Fra tidspunkt (ISO 8601) (OBLIGATORISK)'),
@@ -453,7 +450,7 @@ const saveBonfireNotificationTool = tool({
   }),
   execute: async (data) => {
     try {
-      // KRITISK FIX: Finn validerte koordinater fra cache
+      // KRITISK: Hent koordinater KUN fra cache - aldri stol på AI-ens koordinater
       // Prøv flere nøkler for å finne riktig adresse
       const addressKey = data.adresse.toLowerCase().trim()
       const municipalityKey = `latest_${data.kommune.toLowerCase()}`
@@ -466,8 +463,6 @@ const saveBonfireNotificationTool = tool({
       console.log('🎯 AI sender følgende data:', {
         adresse: data.adresse,
         kommune: data.kommune,
-        latitude: data.latitude,
-        longitude: data.longitude,
       })
 
       if (cachedAddress) {
@@ -478,14 +473,72 @@ const saveBonfireNotificationTool = tool({
           longitude: cachedAddress.longitude,
         })
       } else {
-        console.warn('⚠️ Ingen cache funnet - bruker AI-ens koordinater (kan være unøyaktige)')
-        // Fallback til AI-ens data hvis ingen cache (bør ikke skje normalt)
-        cachedAddress = {
-          formattedAddress: data.adresse,
-          municipality: data.kommune,
-          latitude: data.latitude,
-          longitude: data.longitude,
-          timestamp: Date.now()
+        // Ingen cache funnet - gjør et nytt geocoding-kall
+        console.warn('⚠️ Ingen cache funnet - utfører nytt geocoding-kall')
+        const apiKey = process.env.GOOGLE_MAPS_SERVER_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+        if (!apiKey) {
+          return {
+            success: false,
+            message: 'Kunne ikke lagre - adressevalidering feilet. Prøv igjen.',
+          }
+        }
+
+        try {
+          // Gjør et nytt Places-søk for å hente koordinater
+          const placesResult = await mapsClient.findPlaceFromText({
+            params: {
+              input: data.adresse,
+              inputtype: PlaceInputType.textQuery,
+              fields: ['geometry', 'formatted_address'],
+              key: apiKey
+            }
+          })
+
+          if (placesResult.data.candidates && placesResult.data.candidates.length > 0) {
+            const place = placesResult.data.candidates[0]
+            if (place.geometry?.location) {
+              cachedAddress = {
+                formattedAddress: place.formatted_address || data.adresse,
+                municipality: data.kommune,
+                latitude: place.geometry.location.lat,
+                longitude: place.geometry.location.lng,
+                timestamp: Date.now()
+              }
+              console.log('🔄 Hentet koordinater via nytt geocoding-kall:', cachedAddress)
+            }
+          }
+
+          if (!cachedAddress) {
+            // Fallback til vanlig geocoding
+            const geocodeResult = await mapsClient.geocode({
+              params: {
+                address: data.adresse,
+                region: 'NO',
+                key: apiKey
+              }
+            })
+
+            if (geocodeResult.data.results.length > 0) {
+              const result = geocodeResult.data.results[0]
+              cachedAddress = {
+                formattedAddress: result.formatted_address,
+                municipality: data.kommune,
+                latitude: result.geometry.location.lat,
+                longitude: result.geometry.location.lng,
+                timestamp: Date.now()
+              }
+              console.log('🔄 Hentet koordinater via geocoding fallback:', cachedAddress)
+            }
+          }
+        } catch (geocodeError) {
+          console.error('❌ Geocoding feilet:', geocodeError)
+        }
+
+        if (!cachedAddress) {
+          return {
+            success: false,
+            message: 'Kunne ikke finne koordinater for adressen. Vennligst oppgi adressen på nytt.',
+          }
         }
       }
 
