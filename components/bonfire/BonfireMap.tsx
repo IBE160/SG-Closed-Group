@@ -232,11 +232,8 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
       containerRef.current.appendChild(autocomplete)
       autocompleteRef.current = autocomplete
 
-      // Lytt på place selection
-      autocomplete.addEventListener('gmp-placeselect', async (event: Event) => {
-        const placeEvent = event as google.maps.places.PlaceAutocompletePlaceSelectEvent
-        const place = placeEvent.place
-
+      // Lytt på place selection - prøv både nytt og gammelt event-navn
+      const handlePlaceSelect = async (place: google.maps.places.Place) => {
         console.log('🔍 Place selected:', place)
 
         // Hent full place-data med fetchFields
@@ -287,6 +284,28 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
             onAreaSelect(place.id)
           }
         }
+      }
+
+      // Nytt event-navn (alpha/stable): gmp-select med placePrediction
+      autocomplete.addEventListener('gmp-select', async (event: Event) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const selectEvent = event as any
+        console.log('🔍 gmp-select event fired:', selectEvent)
+
+        if (selectEvent.placePrediction) {
+          const place = selectEvent.placePrediction.toPlace()
+          await handlePlaceSelect(place)
+        } else if (selectEvent.place) {
+          // Fallback for beta-versjon
+          await handlePlaceSelect(selectEvent.place)
+        }
+      })
+
+      // Gammelt event-navn (beta): gmp-placeselect - beholder for bakoverkompatibilitet
+      autocomplete.addEventListener('gmp-placeselect', async (event: Event) => {
+        const placeEvent = event as google.maps.places.PlaceAutocompletePlaceSelectEvent
+        console.log('🔍 gmp-placeselect event fired:', placeEvent)
+        await handlePlaceSelect(placeEvent.place)
       })
 
       // Lytt på input-endringer for å vise/skjule clear-knapp
@@ -556,7 +575,7 @@ export default function BonfireMap() {
         portalContainer
       )}
 
-      <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+      <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} version="beta">
         <Map
           defaultCenter={defaultCenter}
           defaultZoom={10}
