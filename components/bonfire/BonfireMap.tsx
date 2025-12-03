@@ -236,6 +236,12 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
       // Legg til i container
       containerRef.current.appendChild(autocomplete)
       autocompleteRef.current = autocomplete
+      console.log('✅ PlaceAutocompleteElement opprettet og lagt til i DOM')
+
+      // Lytt på feil fra Places API
+      autocomplete.addEventListener('gmp-error', (event: Event) => {
+        console.error('❌ Places API feil:', event)
+      })
 
       // Lytt på place selection - prøv både nytt og gammelt event-navn
       const handlePlaceSelect = async (place: google.maps.places.Place) => {
@@ -314,9 +320,15 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
       })
 
       // Lytt på input-endringer for å vise/skjule clear-knapp
-      autocomplete.addEventListener('gmp-input', () => {
+      autocomplete.addEventListener('gmp-input', (event: Event) => {
         const input = autocomplete.querySelector('input')
+        console.log('⌨️ gmp-input event:', input?.value)
         setHasValue(!!input?.value)
+      })
+
+      // Lytt på requesterror for mer detaljert feilinfo
+      autocomplete.addEventListener('gmp-requesterror', (event: Event) => {
+        console.error('❌ Places API request error:', event)
       })
 
     } catch (err) {
