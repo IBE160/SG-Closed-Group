@@ -16,7 +16,7 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { APIProvider, Map, Marker, InfoWindow, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
+import { APIProvider, Map, AdvancedMarker, InfoWindow, useMap, useMapsLibrary } from '@vis.gl/react-google-maps'
 
 interface BonfireNotification {
   id: string
@@ -120,12 +120,14 @@ function BonfireMarkers({ bonfires }: { bonfires: BonfireNotification[] }) {
       {bonfires.map((bonfire) => {
         const status = getBonfireStatus(bonfire.dateFrom, bonfire.dateTo)
         return (
-          <Marker
+          <AdvancedMarker
             key={bonfire.id}
             position={{ lat: Number(bonfire.latitude), lng: Number(bonfire.longitude) }}
             onClick={() => handleMarkerClick(bonfire)}
-            icon={getMarkerIcon(status)}
-          />
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={getMarkerIcon(status)} alt="Bålmarkør" width={32} height={40} />
+          </AdvancedMarker>
         )
       })}
 
@@ -204,7 +206,7 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
   const [searchValue, setSearchValue] = useState('')
   const [isInitialized, setIsInitialized] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const searchMarkerRef = useRef<google.maps.Marker | null>(null)
+  const searchMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
 
   // Initialiser Google Places Autocomplete
   useEffect(() => {
@@ -248,21 +250,22 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
 
           // Fjern eksisterende søkemarkør
           if (searchMarkerRef.current) {
-            searchMarkerRef.current.setMap(null)
+            searchMarkerRef.current.map = null
           }
 
+          // Lag et custom HTML-element for søkemarkøren (blå sirkel)
+          const markerContent = document.createElement('div')
+          markerContent.innerHTML = `
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="12" cy="12" r="10" fill="#4285F4" stroke="#FFFFFF" stroke-width="3"/>
+            </svg>
+          `
+
           // Legg til ny søkemarkør på valgt sted
-          searchMarkerRef.current = new google.maps.Marker({
+          searchMarkerRef.current = new google.maps.marker.AdvancedMarkerElement({
             position: location,
             map,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 10,
-              fillColor: '#4285F4',
-              fillOpacity: 1,
-              strokeColor: '#FFFFFF',
-              strokeWeight: 3
-            },
+            content: markerContent,
             title: place.formatted_address || place.name || 'Søkeresultat',
             zIndex: 1000 // Over andre markører
           })
@@ -284,7 +287,7 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
           google.maps.event.clearInstanceListeners(autocompleteInstance)
         }
         if (searchMarkerRef.current) {
-          searchMarkerRef.current.setMap(null)
+          searchMarkerRef.current.map = null
           searchMarkerRef.current = null
         }
       }
@@ -303,7 +306,7 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
     }
     // Fjern søkemarkør når søket tømmes
     if (searchMarkerRef.current) {
-      searchMarkerRef.current.setMap(null)
+      searchMarkerRef.current.map = null
       searchMarkerRef.current = null
     }
     // Fjern områdegrense når søket tømmes
