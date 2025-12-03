@@ -40,7 +40,7 @@ Operasjonelt dashboard for nødvarslingsoperatører i Vestfold.
 
 ## Stories (per Epic)
 
-### Epic 1: Foundation & Infrastructure
+### Epic 1: Foundation & Infrastructure (8 stories)
 | # | Story | Status |
 |---|-------|--------|
 | 1-1 | [Project Initialization](stories/1-1-project-initialization-and-repository-setup.md) | Done |
@@ -52,12 +52,17 @@ Operasjonelt dashboard for nødvarslingsoperatører i Vestfold.
 | 1-7 | [SSE Infrastructure](stories/1-7-real-time-infrastructure-foundation-sse-websocket-setup.md) | Done |
 | 1-8 | [Audit Logging](stories/1-8-audit-logging-infrastructure.md) | Done |
 
-### Epic 2: Authentication & Access Control
+### Epic 2: Authentication & Access Control (6 stories)
 | # | Story | Status |
 |---|-------|--------|
 | 2-1 | [NextAuth.js Google OAuth](stories/2-1-nextauth-js-configuration-with-google-oauth.md) | Done |
+| 2-2 | [User Whitelist Management](stories/2-2-user-whitelist-management-system.md) | Done |
+| 2-3 | [Role-Based Access Control](stories/2-3-role-based-access-control-rbac-implementation.md) | Done |
+| 2-4 | [Protected Routes & API](stories/2-4-protected-routes-and-api-endpoints.md) | Done |
+| 2-5 | [Login Page & Profile UI](stories/2-5-login-page-and-user-profile-ui.md) | Done |
+| 2-6 | [Session Security](stories/2-6-session-management-and-security-hardening.md) | Done |
 
-### Epic 3: Event Control Dashboard
+### Epic 3: Event Control Dashboard (8 stories)
 | # | Story | Status |
 |---|-------|--------|
 | 3-1 | [Event Create/List](stories/3-1-event-management-create-and-list-events.md) | Done |
@@ -69,18 +74,38 @@ Operasjonelt dashboard for nødvarslingsoperatører i Vestfold.
 | 3-7 | [Vaktplan Admin](stories/3-7-vaktplan-administrator-editing.md) | Done |
 | 3-8 | [Talegrupper](stories/3-8-talegrupper-radio-talk-groups.md) | Done |
 
-### Epic 4: Flash Message System
+### Epic 4: Flash Message System (6 stories)
 | # | Story | Status |
 |---|-------|--------|
 | 4-1 | [Flash Send/Receive](stories/4-1-flash-message-basic-send-and-receive.md) | Done |
 | 4-2 | [Blink & Acknowledge](stories/4-2-blink-animation-and-acknowledgment.md) | Done |
-| 4-3 | Smart Typing Detection | Skipped |
-| 4-4 | Message History | Done |
-| 4-5 | Auto-Return Timer | Skipped |
-| 4-6 | Performance Optimization | Done |
+| 4-3 | [Smart Typing Detection](stories/4-3-smart-typing-detection-and-auto-switch.md) | Skipped |
+| 4-4 | [Message History](stories/4-4-message-history-and-multiple-messages.md) | Done |
+| 4-5 | [Auto-Return Timer](stories/4-5-auto-return-timer-and-flash-folder-ui.md) | Skipped |
+| 4-6 | [Performance Optimization](stories/4-6-flash-message-performance-optimization.md) | Done |
 
-### Epic 5: Balmelding (Bonfire) System
-*Stories i epics.md - Azure Table Storage-basert*
+### Epic 5: Balmelding (Bonfire) System (7 stories)
+| # | Story | Status |
+|---|-------|--------|
+| 5-1 | [Google Maps Integration](stories/5-1-google-maps-integration-and-map-display.md) | Done |
+| 5-2 | [Manual Bonfire Registration](stories/5-2-manual-bonfire-registration-baseline.md) | Done |
+| 5-3 | [Azure OpenAI Email Parsing](stories/5-3-azure-openai-email-parsing-phase-1.md) | Done |
+| 5-4 | [Power Automate Integration](stories/5-4-power-automate-integration-phase-2.md) | Done |
+| 5-5 | [Municipality Filtering](stories/5-5-municipality-filtering-and-search.md) | Done |
+| 5-6 | [Automatic Expiration](stories/5-6-automatic-bonfire-expiration.md) | Done |
+| 5-7 | [Manual Review Queue](stories/5-7-manual-review-queue-for-flagged-registrations.md) | Done |
+
+---
+
+## Prosjektstatistikk
+
+| Kategori | Antall |
+|----------|--------|
+| **Totalt stories** | 35 |
+| **Fullført** | 33 |
+| **Hoppet over** | 2 |
+| **Epics** | 5 |
+| **Retrospektiver** | 5 |
 
 ---
 
@@ -109,15 +134,16 @@ docs/
 ├── epics.md              # Epic-oversikt
 ├── sprint-status.yaml    # Status-tracking
 ├── tech-spec-epic-*.md   # Tech specs
-├── stories/              # Alle story-filer
-│   ├── 1-*.md           # Epic 1 stories
-│   ├── 2-*.md           # Epic 2 stories
-│   ├── 3-*.md           # Epic 3 stories
-│   └── 4-*.md           # Epic 4 stories
+├── stories/              # Alle story-filer (35 totalt)
+│   ├── 1-*.md           # Epic 1: 8 stories
+│   ├── 2-*.md           # Epic 2: 6 stories
+│   ├── 3-*.md           # Epic 3: 8 stories
+│   ├── 4-*.md           # Epic 4: 6 stories
+│   └── 5-*.md           # Epic 5: 7 stories
 └── sprint-artifacts/     # Retrospektiver
     └── epic-*-retro-*.md
 ```
 
 ---
 
-*Generert: 2025-12-02*
+*Oppdatert: 2025-12-03*
