@@ -208,10 +208,11 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
 
   // Initialiser Google Places Autocomplete med ny API
   useEffect(() => {
-    if (!placesLib || !containerRef.current) return
+    const container = containerRef.current
+    if (!placesLib || !container) return
 
     // Sjekk om elementet allerede finnes (React Strict Mode kjører useEffect to ganger)
-    if (autocompleteRef.current || containerRef.current.querySelector('gmp-place-autocomplete')) {
+    if (autocompleteRef.current || container.querySelector('gmp-place-autocomplete')) {
       return
     }
 
@@ -234,7 +235,7 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
       `
 
       // Legg til i container
-      containerRef.current.appendChild(autocomplete)
+      container.appendChild(autocomplete)
       autocompleteRef.current = autocomplete
       console.log('✅ PlaceAutocompleteElement opprettet og lagt til i DOM')
 
@@ -320,15 +321,15 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
       })
 
       // Lytt på input-endringer for å vise/skjule clear-knapp
-      autocomplete.addEventListener('gmp-input', (event: Event) => {
+      autocomplete.addEventListener('gmp-input', () => {
         const input = autocomplete.querySelector('input')
         console.log('⌨️ gmp-input event:', input?.value)
         setHasValue(!!input?.value)
       })
 
       // Lytt på requesterror for mer detaljert feilinfo
-      autocomplete.addEventListener('gmp-requesterror', (event: Event) => {
-        console.error('❌ Places API request error:', event)
+      autocomplete.addEventListener('gmp-requesterror', (e: Event) => {
+        console.error('❌ Places API request error:', e)
       })
 
     } catch (err) {
@@ -346,15 +347,15 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
           autocompleteRef.current.remove()
         } catch {
           // Fallback hvis remove() ikke fungerer
-          if (containerRef.current && autocompleteRef.current.parentNode === containerRef.current) {
-            containerRef.current.removeChild(autocompleteRef.current)
+          if (container && autocompleteRef.current.parentNode === container) {
+            container.removeChild(autocompleteRef.current)
           }
         }
         autocompleteRef.current = null
       }
       // Fjern eventuelle gjenværende elementer (safety)
-      if (containerRef.current) {
-        const remaining = containerRef.current.querySelector('gmp-place-autocomplete')
+      if (container) {
+        const remaining = container.querySelector('gmp-place-autocomplete')
         if (remaining) {
           remaining.remove()
         }
