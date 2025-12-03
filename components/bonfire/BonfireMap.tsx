@@ -216,7 +216,7 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
         componentRestrictions: { country: 'no' },
         locationBias: new google.maps.Circle({
           center: { lat: 58.9, lng: 5.7 }, // Rogaland sentrum
-          radius: 100000 // 100km radius
+          radius: 50000 // 50km radius (maks tillatt)
         })
       })
 
