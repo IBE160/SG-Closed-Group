@@ -442,21 +442,21 @@ Vi startet med Gemini free tier, som raskt viste begrensninger. Oppgraderte til 
 
 ---
 
-#### **Challenge 2: BMAD Methodology begrensninger**
+#### **Challenge 2: BMAD Methodology - læringskurve og tilpasning**
 
 **Problem:**
-Vi prøvde BMAD (BMad Methodology) som prosjektmetodikk tidlig i prosjektet. BMAD er et rammeverk for AI-assistert prosjektplanlegging med epics, stories og systematisk dokumentasjon.
+Vi brukte BMAD (BMad Methodology) som prosjektmetodikk gjennom hele prosjektet. BMAD er et omfattende rammeverk for AI-assistert prosjektplanlegging med epics, stories, workflows og systematisk dokumentasjon.
 
-**Opplevde begrensninger:**
-- Stor overhead for et to-persons studentprosjekt
-- Mye dokumentasjon som ikke ga verdi i praksis
-- Rigid struktur som ikke passet vår arbeidsflyt
-- Token-krevende prompts for å holde BMAD-kontekst
+**Opplevde utfordringer:**
+- Veldig omfattende metodikk med mye data som ikke var umiddelbart relevant
+- Vi hadde ingen kjennskap til BMAD før prosjektstart - bratt læringskurve
+- AI hoppet noen ganger forbi BMAD-steg og gikk rett til implementering
+- Token-krevende prompts for å holde BMAD-kontekst i lange sesjoner
 
 **Løsning:**
-Vi forlot BMAD etter initial fase og gikk over til mer pragmatisk tilnærming. Beholdt epic-strukturen for organisering, men droppet detaljert BMAD-dokumentasjon.
+Vi gjennomførte BMAD-strukturen så godt vi klarte gjennom hele prosjektet på grunn av oppgavekravene. Når AI forsøkte å hoppe forbi steg, lærte vi å eksplisitt be den "alltid sjekke og følge BMAD-struktur strengt". Dette tvang oss til å være bevisste på metodikken og ga bedre resultater.
 
-**Læring:** Ikke alle metodikker passer alle prosjekter. Tilpass verktøyene til prosjektets skala og behov.
+**Læring:** BMAD er kraftig for større prosjekter, men krever tid å lære. For nybegynnere er det viktig å være eksplisitt med AI om å følge strukturen - ellers tar AI snarveier.
 
 ---
 
@@ -1097,10 +1097,10 @@ KI genererte telefonnummer-validering med generisk regex (`/^\d{8}$/`). Vi mått
    - Vercel Pro nødvendig for live-testing med høy trafikk
    - Budsjetter $100-200/mnd for AI-verktøy i seriøse prosjekter
 
-7. **Metodikk må tilpasses prosjektskala**
-   - BMAD var for kompleks for et to-persons studentprosjekt
-   - Enklere strukturer (epics, stories) fungerte bedre
-   - Ikke alle AI-metodikker passer alle situasjoner
+7. **Metodikk krever bevisst AI-styring**
+   - BMAD er omfattende og krever at man aktivt ber AI følge strukturen
+   - AI tar snarveier hvis man ikke eksplisitt ber den følge metodikken
+   - "Følg BMAD-struktur strengt" som standard prompt-tillegg fungerte godt
 
 ---
 
@@ -1111,7 +1111,6 @@ KI genererte telefonnummer-validering med generisk regex (`/^\d{8}$/`). Vi mått
 - Implementert automatiske tester tidligere (TDD fra start)
 - Brukt TypeScript strict mode konsekvent
 - Satt opp CI/CD pipeline før første feature
-- Unngått BMAD-metodikk for et prosjekt av denne størrelsen
 
 **KI-bruk:**
 - Delt større oppgaver i mindre, mer spesifikke prompts
@@ -1122,8 +1121,8 @@ KI genererte telefonnummer-validering med generisk regex (`/^\d{8}$/`). Vi mått
 - Budsjettert for AI-kostnader fra start
 
 **Metodikk:**
-- Droppet BMAD tidligere - for mye overhead for et studentprosjekt
-- Brukt enklere epic/story-struktur fra starten
+- Lært BMAD grundigere før prosjektstart - mye å sette seg inn i underveis
+- Fra start bedt AI "alltid følge BMAD-struktur strengt" for å unngå snarveier
 - Opprettet parallelle læringsprosjekter tidligere for å teste nye konsepter isolert
 
 **Samarbeid:**
