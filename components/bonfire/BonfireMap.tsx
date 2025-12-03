@@ -194,81 +194,73 @@ function BonfireMarkers({ bonfires }: { bonfires: BonfireNotification[] }) {
 }
 
 /**
- * MapSearchBox - Søkefelt med Google Places Autocomplete (ny API)
- * Bruker PlaceAutocompleteElement i stedet for deprecated Autocomplete
+ * MapSearchBox - Søkefelt med Google Places Autocomplete (stabil API)
+ * Bruker den klassiske Autocomplete API-en som er velprøvd og stabil
  * Lar brukeren søke etter steder og panorere kartet dit
  */
 function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null) => void }) {
   const map = useMap()
   const placesLib = useMapsLibrary('places')
-  const containerRef = useRef<HTMLDivElement>(null)
-  const autocompleteRef = useRef<google.maps.places.PlaceAutocompleteElement | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null)
   const searchMarkerRef = useRef<google.maps.marker.AdvancedMarkerElement | null>(null)
-  const [hasValue, setHasValue] = useState(false)
+  const [inputValue, setInputValue] = useState('')
 
-  // Initialiser Google Places Autocomplete med ny API
+  // Initialiser Google Places Autocomplete (klassisk, stabil API)
   useEffect(() => {
-    const container = containerRef.current
-    if (!placesLib || !container) return
+    const input = inputRef.current
+    if (!placesLib || !input) return
 
-    // Sjekk om elementet allerede finnes (React Strict Mode kjører useEffect to ganger)
-    if (autocompleteRef.current || container.querySelector('gmp-place-autocomplete')) {
+    // Sjekk om autocomplete allerede er initialisert
+    if (autocompleteRef.current) {
       return
     }
 
     try {
-      // Opprett PlaceAutocompleteElement (ny API)
-      const autocomplete = new google.maps.places.PlaceAutocompleteElement({
+      // Opprett Autocomplete (klassisk API - stabil og pålitelig)
+      const autocomplete = new google.maps.places.Autocomplete(input, {
         componentRestrictions: { country: 'no' },
-        locationBias: new google.maps.Circle({
-          center: { lat: 58.9, lng: 5.7 }, // Rogaland sentrum
-          radius: 50000 // 50km radius (maks tillatt)
-        })
+        fields: ['formatted_address', 'geometry', 'place_id', 'name', 'types'],
+        types: ['geocode', 'establishment']
       })
 
-      // Style autocomplete-elementet
-      autocomplete.style.cssText = `
-        width: 100%;
-        height: 40px;
-        border: none;
-        outline: none;
-      `
+      // Bias søk mot Rogaland-området
+      const rogalandBounds = new google.maps.LatLngBounds(
+        new google.maps.LatLng(58.5, 5.2),  // Sørvest
+        new google.maps.LatLng(59.5, 6.5)   // Nordøst
+      )
+      autocomplete.setBounds(rogalandBounds)
 
-      // Legg til i container
-      container.appendChild(autocomplete)
       autocompleteRef.current = autocomplete
-      console.log('✅ PlaceAutocompleteElement opprettet og lagt til i DOM')
+      console.log('✅ Autocomplete (klassisk API) initialisert')
 
-      // Lytt på feil fra Places API
-      autocomplete.addEventListener('gmp-error', (event: Event) => {
-        console.error('❌ Places API feil:', event)
-      })
-
-      // Lytt på place selection - prøv både nytt og gammelt event-navn
-      const handlePlaceSelect = async (place: google.maps.places.Place) => {
+      // Lytt på place_changed event
+      autocomplete.addListener('place_changed', () => {
+        const place = autocomplete.getPlace()
         console.log('🔍 Place selected:', place)
 
-        // Hent full place-data med fetchFields
-        await place.fetchFields({
-          fields: ['displayName', 'formattedAddress', 'location', 'viewport', 'id', 'types']
-        })
+        if (!place.geometry?.location) {
+          console.warn('Ingen geometri for valgt sted')
+          return
+        }
 
-        const location = place.location
-        if (location && map) {
+        const location = place.geometry.location
+
+        if (map) {
           console.log('📍 Moving map to:', location.lat(), location.lng())
-          console.log('📍 Place ID:', place.id)
 
           // Panorer kartet til valgt sted
           map.panTo(location)
 
-          // Zoom inn basert på viewport
-          if (place.viewport) {
-            map.fitBounds(place.viewport)
+          // Zoom inn basert på viewport eller standard zoom
+          if (place.geometry.viewport) {
+            map.fitBounds(place.geometry.viewport)
           } else {
             map.setZoom(14)
           }
 
-          setHasValue(true)
+          // Oppdater input-verdi
+          setInputValue(place.formatted_address || place.name || '')
 
           // Fjern eksisterende søkemarkør
           if (searchMarkerRef.current) {
@@ -287,49 +279,15 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
             position: location,
             map,
             content: markerContent,
-            title: place.formattedAddress || place.displayName || 'Søkeresultat',
+            title: place.formatted_address || place.name || 'Søkeresultat',
             zIndex: 1000
           })
 
           // Send place_id til parent for områdegrense
-          if (onAreaSelect && place.id) {
-            onAreaSelect(place.id)
+          if (onAreaSelect && place.place_id) {
+            onAreaSelect(place.place_id)
           }
         }
-      }
-
-      // Nytt event-navn (alpha/stable): gmp-select med placePrediction
-      autocomplete.addEventListener('gmp-select', async (event: Event) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const selectEvent = event as any
-        console.log('🔍 gmp-select event fired:', selectEvent)
-
-        if (selectEvent.placePrediction) {
-          const place = selectEvent.placePrediction.toPlace()
-          await handlePlaceSelect(place)
-        } else if (selectEvent.place) {
-          // Fallback for beta-versjon
-          await handlePlaceSelect(selectEvent.place)
-        }
-      })
-
-      // Gammelt event-navn (beta): gmp-placeselect - beholder for bakoverkompatibilitet
-      autocomplete.addEventListener('gmp-placeselect', async (event: Event) => {
-        const placeEvent = event as google.maps.places.PlaceAutocompletePlaceSelectEvent
-        console.log('🔍 gmp-placeselect event fired:', placeEvent)
-        await handlePlaceSelect(placeEvent.place)
-      })
-
-      // Lytt på input-endringer for å vise/skjule clear-knapp
-      autocomplete.addEventListener('gmp-input', () => {
-        const input = autocomplete.querySelector('input')
-        console.log('⌨️ gmp-input event:', input?.value)
-        setHasValue(!!input?.value)
-      })
-
-      // Lytt på requesterror for mer detaljert feilinfo
-      autocomplete.addEventListener('gmp-requesterror', (e: Event) => {
-        console.error('❌ Places API request error:', e)
       })
 
     } catch (err) {
@@ -341,38 +299,18 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
         searchMarkerRef.current.map = null
         searchMarkerRef.current = null
       }
-      // Fjern autocomplete-elementet fra DOM
-      if (autocompleteRef.current) {
-        try {
-          autocompleteRef.current.remove()
-        } catch {
-          // Fallback hvis remove() ikke fungerer
-          if (container && autocompleteRef.current.parentNode === container) {
-            container.removeChild(autocompleteRef.current)
-          }
-        }
-        autocompleteRef.current = null
-      }
-      // Fjern eventuelle gjenværende elementer (safety)
-      if (container) {
-        const remaining = container.querySelector('gmp-place-autocomplete')
-        if (remaining) {
-          remaining.remove()
-        }
-      }
+      // Google Autocomplete fjernes automatisk når input-elementet unmountes
+      autocompleteRef.current = null
     }
   }, [placesLib, map, onAreaSelect])
 
   // Tøm søket
   const handleClear = useCallback(() => {
-    if (autocompleteRef.current) {
-      const input = autocompleteRef.current.querySelector('input')
-      if (input) {
-        input.value = ''
-        input.dispatchEvent(new Event('input', { bubbles: true }))
-      }
+    setInputValue('')
+    if (inputRef.current) {
+      inputRef.current.value = ''
+      inputRef.current.focus()
     }
-    setHasValue(false)
 
     if (searchMarkerRef.current) {
       searchMarkerRef.current.map = null
@@ -391,14 +329,25 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
   return (
     <div className="absolute top-2 left-1/2 transform -translate-x-1/2 z-10 w-80">
       <div className="relative bg-white rounded shadow-md overflow-hidden">
-        {/* PlaceAutocomplete container - Google sin komponent har innebygd søkeikon */}
-        <div
-          ref={containerRef}
-          className="pr-10 [&_input]:w-full [&_input]:h-10 [&_input]:border-0 [&_input]:outline-none [&_input]:text-gray-800 [&_input]:text-sm [&_input]:bg-transparent"
+        {/* Søkeikon */}
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+
+        {/* Input-felt */}
+        <input
+          ref={inputRef}
+          type="text"
+          placeholder="Søk etter sted..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          className="w-full h-10 pl-10 pr-10 border-0 outline-none text-gray-800 text-sm bg-transparent"
         />
 
         {/* Tøm-knapp */}
-        {hasValue && (
+        {inputValue && (
           <button
             onClick={handleClear}
             className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 z-10"
