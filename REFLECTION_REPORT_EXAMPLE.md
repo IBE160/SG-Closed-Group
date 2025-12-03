@@ -104,11 +104,26 @@ Vi brukte AI aktivt gjennom hele utviklingen, spesielt for:
 | Student 2 (Amalie) | 42 | Epic 5: AI-chatbot, Maps |
 | **Claude (AI)** | 15 | AI-genererte commits |
 
+**Claude Code AI-bruksstatistikk:**
+
+| Metrikk | Verdi |
+|---------|-------|
+| **API-kall til Claude** | 5,113 |
+| **Input tokens** | 472,430 |
+| **Output tokens** | 1,732,370 |
+| **Totalt tokens** | 2,204,800 |
+| **Antall sesjoner** | 21 |
+| **Modell** | claude-sonnet-4-5-20250929 |
+
+*Data ekstrahert fra `.logging/requests/` - alle Claude Code interaksjoner logget automatisk.*
+
 **Refleksjon over dataene:**
 - 28% av commits var bug fixes - dette viser at KI-generert kode krever betydelig etterarbeid
 - Claude har 15 commits direkte attribuert til AI - demonstrerer transparent AI-bruk
 - Student 1 hadde flere commits pga. mer iterativ UI-utvikling på "Hva Skjer"
 - Student 2 jobbet med færre, men mer komplekse features (AI-integrasjon)
+- **2,2 millioner tokens** brukt over prosjektet - viser intensiv AI-bruk
+- Gjennomsnittlig ~430 output tokens per API-kall (ca. 320 ord per respons)
 
 ---
 
