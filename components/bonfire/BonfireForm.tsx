@@ -582,7 +582,7 @@ function BonfireFormContent() {
 
 export default function BonfireForm() {
   return (
-    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''}>
+    <APIProvider apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''} version="beta">
       <BonfireFormContent />
     </APIProvider>
   )
