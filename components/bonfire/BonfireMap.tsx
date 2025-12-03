@@ -208,7 +208,12 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
 
   // Initialiser Google Places Autocomplete med ny API
   useEffect(() => {
-    if (!placesLib || !containerRef.current || autocompleteRef.current) return
+    if (!placesLib || !containerRef.current) return
+
+    // Sjekk om elementet allerede finnes (React Strict Mode kjører useEffect to ganger)
+    if (autocompleteRef.current || containerRef.current.querySelector('gmp-place-autocomplete')) {
+      return
+    }
 
     try {
       // Opprett PlaceAutocompleteElement (ny API)
@@ -323,9 +328,24 @@ function MapSearchBox({ onAreaSelect }: { onAreaSelect?: (placeId: string | null
         searchMarkerRef.current.map = null
         searchMarkerRef.current = null
       }
-      if (autocompleteRef.current && containerRef.current) {
-        containerRef.current.removeChild(autocompleteRef.current)
+      // Fjern autocomplete-elementet fra DOM
+      if (autocompleteRef.current) {
+        try {
+          autocompleteRef.current.remove()
+        } catch {
+          // Fallback hvis remove() ikke fungerer
+          if (containerRef.current && autocompleteRef.current.parentNode === containerRef.current) {
+            containerRef.current.removeChild(autocompleteRef.current)
+          }
+        }
         autocompleteRef.current = null
+      }
+      // Fjern eventuelle gjenværende elementer (safety)
+      if (containerRef.current) {
+        const remaining = containerRef.current.querySelector('gmp-place-autocomplete')
+        if (remaining) {
+          remaining.remove()
+        }
       }
     }
   }, [placesLib, map, onAreaSelect])
