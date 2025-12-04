@@ -3,16 +3,16 @@
 
 ## 1. Gruppeinformasjon
 
-**Gruppenavn:** [Deres gruppenavn]
+**Gruppenavn:** [SG-Closed-Grouo]
 
 **Gruppemedlemmer:**
-- [Student 1 Navn] - [student1@epost.no]
-- [Student 2 Navn] - [student2@epost.no]
+- [Rune Grødem] - [rune.grodem@himolde.no]
+- [Amalie Grødem] - [amalie.grodem@himolde.no]
 
 **Dato:** [Dagens dato - 10. november 2025]
 
 **Prosjekt:** Emergency operations support system for 110 Sør-Vest alarm center
-**GitHub:** https://github.com/rgrodem/SG-Closed-Group
+**GitHub:** https://github.com/IBE160/SG-Closed-Group
 
 ---
 
@@ -26,7 +26,7 @@ Vi har utviklet et webbasert støttesystem for nødalarmsentralen 110 Sør-Vest 
 Prosjektet var opprinnelig planlagt å integrere direkte med arbeidsplassens eksisterende systemer via Microsoft Power Automate. Bålmeldinger kommer inn via e-post til alarmsentralen, og tanken var å automatisere prosesseringen av disse meldingene.
 
 **Pivot på grunn av GDPR:**
-Vi møtte uventede utfordringer med godkjennelse fra arbeidsgiver basert på en (etter vår vurdering ubegrunnet) GDPR-konflikt. Dette tvang oss til å endre prosjektets scope underveis. Vi måtte lage en egen registreringsside for bålmeldinger for å kunne levere oppgaven, i stedet for direkte integrasjon med arbeidsplassens e-postsystem.
+Vi møtte uventede utfordringer med godkjennelse fra arbeidsgiver basert på en (etter vår vurdering ubegrunnet) GDPR-konflikt. Dette tvang oss til å endre prosjektets scope underveis. Vi måtte lage en egen registreringsside for bålmeldinger for å kunne levere oppgaven, i stedet for direkte integrasjon med arbeidsplassens e-postsystem. 
 
 **Systemets hovedfunksjoner:**
 - **AI-chatbot** for naturlig norsk språkregistrering av bålmeldinger
@@ -49,15 +49,15 @@ Systemet er designet for å kunne selges til 110 Sør-Vest og andre nødetater i
 
 **Oppgavefordeling:**
 Vi delte prosjektet i to klare deler for å unngå konflikter:
-- **Student 1 (Epic 1-4):** "Hva Skjer"-applikasjonen - sanntidsoversikt, vaktplan, flash-meldinger, hendelseslogg
-- **Student 2 (Epic 5):** Azure OpenAI, Google Maps API, AI-chatbot for bålmeldinger
+- **Rune Grødem (Epic 1-4):** "Hva Skjer"-applikasjonen - sanntidsoversikt, vaktplan, flash-meldinger, hendelseslogg
+- **Amalie Grødem (Epic 5):** Azure OpenAI, Google Maps API, AI-chatbot for bålmeldinger
 
 Denne fordelingen var strategisk viktig. Vi innså tidlig at parallelt arbeid på samme epic ville skapt store utfordringer med synkronisering. AI-programmering innebærer mye venting mens man har gitt en prompt og AI jobber, så det var effektivt å jobbe på separate deler.
 
 **Samarbeidsverktøy:**
 - **Git & GitHub**: Feature branches med synkronisering mot hovedrepo
 - **Claude Code**: Primært AI-utviklingsverktøy (oppgradert til MAX)
-- **VS Code**: Primær editor - vi valgte å ikke bytte til Google Antigravity
+- **VS Code**: Primær editor - vi valgte å ikke bytte til Google Antigravity eller andre IDE'er.
 - **Vercel**: Live deployment for testing på jobb
 
 **GitHub-utfordring:**
@@ -120,8 +120,8 @@ Vi brukte AI aktivt gjennom hele utviklingen, spesielt for:
 **Refleksjon over dataene:**
 - 28% av commits var bug fixes - dette viser at KI-generert kode krever betydelig etterarbeid
 - Claude har 15 commits direkte attribuert til AI - demonstrerer transparent AI-bruk
-- Student 1 hadde flere commits pga. mer iterativ UI-utvikling på "Hva Skjer"
-- Student 2 jobbet med færre, men mer komplekse features (AI-integrasjon)
+- Rune Grødem hadde flere commits pga. mer iterativ UI-utvikling på "Hva Skjer"
+- Amalie Grødem jobbet med færre, men mer komplekse features (AI-integrasjon)
 - **2,2 millioner tokens** brukt over prosjektet - viser intensiv AI-bruk
 - Gjennomsnittlig ~430 output tokens per API-kall (ca. 320 ord per respons)
 
