@@ -983,6 +983,54 @@ KI gjør oss mer produktive NÅ, men vi må bygge dyp kompetanse for langsiktig 
 
 ---
 
+### 5.6 Forsyningskjedesikkerhet (Supply Chain Security)
+
+**Aktuell hendelse under prosjektet:**
+
+I november 2025 mottok vi varsling fra HelseCERT (Nasjonal sikkerhetsmyndighet for helse-, omsorgs- og sosialsektoren) om en alvorlig skadevarekampanje kalt "SHA1-Hulud" som rammet npm-økosystemet.
+
+**Hva skjedde:**
+- Over 1000 npm-pakker ble infisert, inkludert populære pakker fra Postman, AsyncAPI, PostHog og Zapier
+- Skadevaren stjal innloggingsdetaljer til GitHub, AWS, Azure og npm
+- Stjålet informasjon ble publisert offentlig på GitHub
+- Angriperne fikk tilgang via en svakhet i GitHub Actions
+- Mer enn 20 000 repoer med lekket informasjon ble identifisert
+
+**Vår respons:**
+Vi gjennomførte umiddelbart en sikkerhetssjekk av prosjektet:
+- ✅ Kjørte `npm audit` - ingen SHA1-Hulud indikatorer
+- ✅ Søkte etter kjente skadelige filer (`actionsSecrets.json`, `bun_environment.js`, etc.)
+- ✅ Verifiserte at ingen av de kompromitterte pakkene (AsyncAPI, Postman, ENS, PostHog, Zapier) var i bruk
+- ✅ Gjennomgikk `package-lock.json` historikk for mistenkelige endringer
+- ✅ Sjekket `.github/workflows/` og `.git/workflows/` for uautoriserte filer
+
+**Resultat:** Prosjektet var ikke kompromittert.
+
+**Læring for fremtidige prosjekter:**
+
+1. **Forsyningskjedeangrep er reelle trusler:**
+   - npm-pakker kan inneholde skadevare selv om de er populære
+   - Angrep kan spre seg via legitime utvikleres kompromitterte kontoer
+
+2. **Proaktive tiltak:**
+   - Kjør `npm audit` regelmessig
+   - Hold avhengigheter oppdatert
+   - Bruk `package-lock.json` for reproduserbare installasjoner
+   - Vurder verktøy som Snyk eller Socket for kontinuerlig overvåking
+
+3. **Multifaktorautentisering (MFA) er kritisk:**
+   - Alle utviklere bør ha MFA på GitHub, npm og skytjenester
+   - Preferert: Phishingresistent MFA (hardware-nøkler)
+
+4. **Varslingssystemer:**
+   - Abonner på sikkerhetsvarslinger fra relevante CERT-organisasjoner
+   - HelseCERT-varslingen ga oss tidlig informasjon til å sjekke prosjektet
+
+**Refleksjon:**
+Denne hendelsen viste viktigheten av å være bevisst på sikkerhetstrusler i moderne programvareutvikling. Selv om vi bruker AI til å generere kode raskt, må vi ikke glemme grunnleggende sikkerhetspraksis. npm-økosystemet som vi er avhengige av kan være en angrepsvektor - dette er noe vi ikke hadde tenkt på før vi mottok varslingen.
+
+---
+
 ## 6. Teknologiske implikasjoner
 
 ### 6.1 Kodekvalitet og vedlikehold
