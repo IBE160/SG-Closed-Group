@@ -3,13 +3,13 @@
 
 ## 1. Gruppeinformasjon
 
-**Gruppenavn:** [SG-Closed-Grouo]
+**Gruppenavn:** [SG-Closed-Group]
 
 **Gruppemedlemmer:**
 - [Rune Grødem] - [rune.grodem@himolde.no]
 - [Amalie Grødem] - [amalie.grodem@himolde.no]
 
-**Dato:** [Dagens dato - 10. november 2025]
+**Dato:** [Dagens dato - 05. desember 2025]
 
 **Prosjekt:** Emergency operations support system for 110 Sør-Vest alarm center
 **GitHub:** https://github.com/IBE160/SG-Closed-Group
@@ -35,7 +35,7 @@ Vi møtte uventede utfordringer med godkjennelse fra arbeidsgiver basert på en 
 - **Databaselagring** i Azure Table Storage (valgt for GDPR-compliance)
 - **Kartvisning** for operatører (Google Maps integration)
 - **Autentisering** via Google OAuth (NextAuth.js v5)
-- **"Hva Skjer"-applikasjon** for sanntidsoversikt over hendelser på sentralen
+- **"Hva Skjer"-applikasjon** for sanntidsoversikt over spesiell hendelser og beskjeder på sentralen
 
 **Sikkerhetshensyn:**
 Vi valgte bevisst Azure OpenAI fremfor andre AI-modeller for å sikre at persondata håndteres i henhold til GDPR. Azure garanterer europeisk datalagring og enterprise-grade sikkerhet, noe som var kritisk for et prosjekt som håndterer nødmeldinger.
@@ -52,7 +52,7 @@ Vi delte prosjektet i to klare deler for å unngå konflikter:
 - **Rune Grødem (Epic 1-4):** "Hva Skjer"-applikasjonen - sanntidsoversikt, vaktplan, flash-meldinger, hendelseslogg
 - **Amalie Grødem (Epic 5):** Azure OpenAI, Google Maps API, AI-chatbot for bålmeldinger
 
-Denne fordelingen var strategisk viktig. Vi innså tidlig at parallelt arbeid på samme epic ville skapt store utfordringer med synkronisering. AI-programmering innebærer mye venting mens man har gitt en prompt og AI jobber, så det var effektivt å jobbe på separate deler.
+Denne fordelingen var strategisk viktig. Vi innså tidlig at parallelt arbeid på samme epic ville skapt store utfordringer med synkronisering. AI-programmering innebærer mye venting mens man har gitt en prompt og AI jobber, så det var effektivt å jobbe på separate deler. I tillegg er arbeidsmengden for denne applikasjonen omfattende og det ville ikke bli gjennomførbart om vi ikke hadde delt dette opp. 
 
 **Samarbeidsverktøy:**
 - **Git & GitHub**: Feature branches med synkronisering mot hovedrepo
@@ -1221,8 +1221,4 @@ Fremtidens utviklere vil ikke velge mellom KI og tradisjonell utvikling - de vil
 
 **Total ordtelling:** ~5,500 ord
 
-**Vedlegg:**
-- `.logging/requests/` - Alle KI-interaksjoner
-- `REFLECTION_REPORT_GUIDE.md` - Utfyllingsguide
-- GitHub commit history - Dokumentasjon av utviklingsprosess
-- Parallelle læringsprosjekter - Eksperimentering med nye konsepter
+
