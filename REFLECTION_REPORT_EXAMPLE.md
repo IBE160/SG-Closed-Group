@@ -7,7 +7,7 @@
 
 **Gruppemedlemmer:**
 - [Rune Grødem] - [rune.grodem@himolde.no]
-- [Amalie Grødem] - [amalie.grodem@himolde.no]
+- [Amalie Grødem] - [amalie.l.grodem@himolde.no]
 
 **Dato:** [Dagens dato - 05. desember 2025]
 
