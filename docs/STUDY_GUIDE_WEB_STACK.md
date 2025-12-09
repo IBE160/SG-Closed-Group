@@ -110,7 +110,31 @@ En database er **organisert lagring av data**. Tenk på det som et digitalt arki
 | Teknologi | Hva det er | Hvorfor vi bruker det |
 |-----------|-----------|----------------------|
 | **PostgreSQL** | Relasjonsdatabase | Pålitelig, kraftig og gratis database for strukturerte data |
+| **Supabase** | Database-hosting (BaaS) | Gratis hosting av PostgreSQL med dashboard, backups og SSL |
 | **Prisma** | ORM | Oversetter mellom TypeScript-objekter og SQL-spørringer |
+
+### Supabase - Hva er det?
+
+**Supabase** er en "Backend-as-a-Service" (BaaS) plattform som gir deg en ferdig PostgreSQL-database i skyen.
+
+**Hvorfor bruker vi Supabase?**
+- **Gratis tier** - Perfekt for studentprosjekter
+- **Ferdig oppsett** - Ingen server å konfigurere selv
+- **Dashboard** - Visuelt grensesnitt for å se og redigere data
+- **Automatisk backup** - Data er sikret
+- **Connection pooling** - Håndterer mange samtidige tilkoblinger effektivt
+
+**Hvordan fungerer det?**
+```
+Vår Next.js App  ──────>  Supabase (i skyen)  ──────>  PostgreSQL Database
+                  via Prisma ORM                         (hostet av Supabase)
+```
+
+**To typer tilkoblinger:**
+| Type | Port | Bruksområde |
+|------|------|-------------|
+| **Pooled (pgbouncer)** | 6543 | Vanlige spørringer - deler tilkoblinger effektivt |
+| **Direct** | 5432 | Database-migrasjoner - krever direkte tilkobling |
 
 ### Relasjonsdatabase forklart:
 
@@ -348,6 +372,7 @@ Slik henger alt sammen når en bruker oppretter en ny hendelse:
 | **Styling** | Tailwind CSS, shadcn/ui | Utseende |
 | **Backend** | Next.js API Routes | Server-logikk |
 | **Database** | PostgreSQL + Prisma | Datalagring |
+| **DB Hosting** | Supabase | Database i skyen (BaaS) |
 | **Auth** | NextAuth.js + Google OAuth | Innlogging |
 | **State** | Zustand + React Query | Tilstandshåndtering |
 | **Real-time** | SSE | Sanntidsoppdateringer |
