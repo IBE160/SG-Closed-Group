@@ -36,6 +36,7 @@ psql "your-database-url" -f supabase/migrations/20251211000000_enable_rls_all_ta
 | File | Description | Date |
 |------|-------------|------|
 | `20251211000000_enable_rls_all_tables.sql` | Enable RLS on all public tables to prevent unauthorized access via PostgREST | 2025-12-11 |
+| `20251211000001_add_server_only_policies.sql` | Add explicit "deny all" policies to silence linter warnings | 2025-12-11 |
 
 ## Security Notes
 
